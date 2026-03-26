@@ -1,12 +1,10 @@
 #include <iostream>
-#include "../include/Node.h"
+#include "../include/NeuralNetwork.h"
 
 int main() {
-    std::cout << "Hello world" << std::endl;
-
-    Node* firstNode = new Node();
-    Node* secondNode = new Node();
-
-    firstNode->setNext(secondNode);
+    std::vector<size_t> layers = {2, 3, 3, 4, 0, 1};
+    NeuralNetwork layeredNetwork(layers);
+    
+    std::cout << layeredNetwork << std::endl;    
     return 0;
 }
