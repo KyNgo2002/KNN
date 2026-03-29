@@ -2,6 +2,7 @@
 #define NERUALNETWORK_H
 
 #include "Layer.h"
+#include "Mat2D.h"
 
 #include <iostream>
 #include <vector>
@@ -13,12 +14,15 @@ public:
 
     size_t size() const;
 
+    void forward();
+
     void printLayer(size_t aLayerIdx);
 
     friend std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork);
 
 private:
-    std::vector<Layer> mLayers;
+    std::vector<Layer<double>> mLayers;
+    std::vector<Mat2D<double>> mWeights;
 };
 
 #endif
