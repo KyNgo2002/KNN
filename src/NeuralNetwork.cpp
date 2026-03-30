@@ -10,9 +10,15 @@ NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers) {
 
     mLayers.reserve(aLayers.size());
     for (auto layerSize : aLayers) {
-        mLayers.emplace_back(std::max(layerSize, static_cast<size_t>(1)));
+        if (layerSize < 1) {
+            throw std::invalid_argument("Layer size must be at least 1");
+        }
+        mLayers.emplace_back(layerSize);
     }
-        
+
+    // Weights matrices are M x N
+    //  - M: Size of next size of the next layer in the matrix
+    //  - N: Size of the previous layer in the matrix
     mWeights.reserve(aLayers.size() - 1);
     for (size_t i = 1; i < aLayers.size(); ++i) {
        mWeights.emplace_back(Mat2D<double>(aLayers[i], aLayers[i - 1], 1.0));
@@ -23,7 +29,7 @@ size_t NeuralNetwork::size() const {
     return mLayers.size();
 }
 
-void NeuralNetwork::forward() {
+void train() {
 
 }
 
@@ -31,6 +37,14 @@ void NeuralNetwork::printLayer(size_t aLayerIdx) {
     if (aLayerIdx >= mLayers.size()) {
         throw std::out_of_range("Layer index out of bounds");
     }
+}
+
+void NeuralNetwork::forward() {
+
+}
+
+void NeuralNetwork::backpropagation() {
+
 }
 
 std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork) {

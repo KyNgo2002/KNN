@@ -40,7 +40,17 @@ Mat2D<T>::Mat2D(size_t aWidth, size_t aHeight, T value) {
 
 template <typename T>
 std::vector<T> Mat2D<T>::multiply(const std::vector<T>& aVec) {
-    
+    if (aVec.size() != mWidth) {
+        throw std::length_error("Attempting to multiply Mat2D with incorrectly sized vector.");
+    }
+
+    std::vector<T> output(mHeight);
+    for (size_t row = 0; row < mHeight; ++row) {
+        for (size_t col = 0; col < mWidth; ++col) {
+           output[row] += aVec[row] * mData[row][col]; 
+        }
+    }
+    return output;
 }
 
 template <typename U>
