@@ -4,18 +4,15 @@
 
 #include "../include/Mat2D.h"
 #include "../include/NeuralNetwork.h"
+#include "../include/Reader.h"
 
-int main() {
-
-    std::string file = "trunk/train-labels-idx1-ubyte"; 
-    std::ifstream fstream(file, std::ios::binary);
-
-    if (fstream.is_open() == false) {
-        std::cout << "File failed to open" << std::endl;
-    }
-    
+int main() { 
     std::vector<size_t> layers = {2, 3, 3, 4, 5, 1};
     NeuralNetwork layeredNetwork(layers);
+
+    const std::string filePath = "trunk/train-labels-idx1-ubyte"; 
+
+    readTrainingData(filePath); 
     
 //    std::cout << layeredNetwork << std::endl;    
     return 0;    
