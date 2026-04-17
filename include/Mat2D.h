@@ -11,6 +11,7 @@ public:
     Mat2D() = default;
     Mat2D(size_t aWidth, size_t aHeight);
     Mat2D(size_t aWidth, size_t aHeight, T aValue);
+    Mat2D(const Mat2D& other);
 
     std::vector<T> multiply(const std::vector<T>& aVec);
 
@@ -39,6 +40,18 @@ Mat2D<T>::Mat2D(size_t aWidth, size_t aHeight, T value) {
 }
 
 template <typename T>
+Mat2D<T>::Mat2D(const Mat2D& other) {
+    mWidth = other.mWidth;
+    mHeight = other.mHeight;
+    mData.resize(mHeight, std::vector<T>(mWidth));
+    for (size_t i = 0; i < mHeight; ++i) {
+        for (size_t j = 0; j < mWidth; ++j) {
+            mData[i][j] = other.mData[i][j];
+        }
+    }
+}
+
+template <typename T>
 std::vector<T> Mat2D<T>::multiply(const std::vector<T>& aVec) {
     if (aVec.size() != mWidth) {
         throw std::length_error("Attempting to multiply Mat2D with incorrectly sized vector.");
@@ -58,7 +71,7 @@ std::ostream& operator<<(std::ostream& aOut, Mat2D<U>& aMatrix) {
     for (const auto& row : aMatrix.mData) {
         std::cout << "[ "; 
         for (auto value : row) {
-            std::cout << value << " ";
+            std::cout << static_cast<int>(value) << " ";
         }        
         std::cout << "]" << std::endl;
     }
