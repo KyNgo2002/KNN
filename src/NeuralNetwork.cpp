@@ -29,8 +29,26 @@ size_t NeuralNetwork::size() const {
     return mLayers.size();
 }
 
-void train() {
+size_t NeuralNetwork::trainingDataSize() const {
+    return mTrainingData.size();
+}
 
+size_t NeuralNetwork::trainingLabelsSize() const {
+    return mTrainingLabels.size();
+}
+
+void NeuralNetwork::train() {
+    if (mTrainingData.size() != mTrainingLabels.size()) {
+        throw std::logic_error("Training data size does not match training labels size. Aborting");
+    }
+}
+
+void NeuralNetwork::setTrainingData(const std::vector<Mat2D<uint8_t>>& aTrainingData) {
+    mTrainingData = aTrainingData;
+}
+
+void NeuralNetwork::setTrainingLabels(const std::vector<Mat2D<uint8_t>>& aTrainingLabels) {
+    mTrainingLabels = aTrainingLabels;
 }
 
 void NeuralNetwork::printLayer(size_t aLayerIdx) {

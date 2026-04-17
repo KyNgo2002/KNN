@@ -13,7 +13,14 @@ uint32_t readFourBytes(std::ifstream& fstream, uint8_t* byte) {
     return (byte[0] << 24) | (byte[1] << 16) | (byte[2] << 8) | (byte[3]);
 }
 
-std::vector<int> readTrainingData(const std::string& filePath) {
+// IDX file format for training data:
+// Big Endian
+// Starts with a 32 bit number. The first two bytes are always 0.
+// The third byte denotes the data type, in this case unsigned byte.
+// The fourth byte denotes the number of dimensions, N.
+// The next N 4-byte blocks denote the size of each dimension.
+// You then read the following data in single-byte increments. 
+std::vector<Mat2D<uint8_t>> readFile(const std::string& filePath) {
     std::cout << "Attempting to read file: " << filePath << std::endl;
     std::ifstream fstream(filePath, std::ios::binary);
 
@@ -22,7 +29,7 @@ std::vector<int> readTrainingData(const std::string& filePath) {
     }
 
     uint8_t bytes[4];
-    uint32_t something = readFourBytes(fstream, bytes);
+    readFourBytes(fstream, bytes);
     size_t numDimensions = static_cast<int>(bytes[3]);
     std::cout << "Dimensions: " << numDimensions << std::endl;
     std::vector<size_t> dimensions(numDimensions);
@@ -32,20 +39,18 @@ std::vector<int> readTrainingData(const std::string& filePath) {
         std::cout << "Dimension " << i + 1 << ": " << dimensions[i] << std::endl;
     }
     
-    uint8_t byte = 0; 
-    // std::vector<Mat2D<uint8_t>> images(dimensions[0], Mat2D<uint8_t>(dimensions[1], dimensions[2]));
-    Mat2D<uint8_t> test(28, 28, 0);
-    for (size_t i = 0; i < dimensions[1]; ++i) {
-        for (size_t j = 0; j < dimensions[2]; ++j) {
-//            fstream.read(reinterpret_cast<char*>(test[i][j]), 1);
-            fstream.read(reinterpret_cast<char*>(&byte), 1); 
-            test[i][j] = byte;
-        }   
-    }        
+    std::vector<Mat2D<uint8_t>> images(dimensions[0], Mat2D<uint8_t>(dimensions[1], dimensions[2]));
+    for (size_t image = 0; image < dimensions[0]; ++image) {
+        for (size_t i = 0; i < dimensions[1]; ++i) {
+            for (size_t j = 0; j < dimensions[2]; ++j) {
+                fstream.read(reinterpret_cast<char*>(&images[image][i][j]), 1);
+            } 
+        }
+    }
 
-    std::cout << test << std::endl;
-
-    return {};
+    return images;
 }
+
+
 
 #endif

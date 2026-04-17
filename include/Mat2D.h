@@ -1,10 +1,16 @@
 #ifndef MAT2D_H
 #define MAT2D_H
 
+#include <concepts>
+#include <iomanip>
 #include <iostream>
+#include <type_traits>
 #include <vector>
 
 template <typename T>
+concept Numeric = std::is_arithmetic_v<T>;
+
+template <Numeric T>
 class Mat2D {
 // Matrix class
 public:
@@ -15,7 +21,7 @@ public:
 
     std::vector<T> multiply(const std::vector<T>& aVec);
 
-    template <typename U>
+    template <Numeric U>
     friend std::ostream& operator<<(std::ostream& aOut, Mat2D<U>& aMatrix);
 
     std::vector<T>& operator[](size_t row);
@@ -25,21 +31,21 @@ private:
     std::vector<std::vector<T>> mData;
 };
 
-template <typename T>
+template <Numeric T>
 Mat2D<T>::Mat2D(size_t aWidth, size_t aHeight) {
     mWidth = aWidth;
     mHeight = aHeight;
     mData.resize(aHeight, std::vector<T>(aWidth));
 }
 
-template <typename T>
+template <Numeric T>
 Mat2D<T>::Mat2D(size_t aWidth, size_t aHeight, T value) {
     mWidth = aWidth;
     mHeight = aHeight;
     mData.resize(aHeight, std::vector<T>(aWidth, value));
 }
 
-template <typename T>
+template <Numeric T>
 Mat2D<T>::Mat2D(const Mat2D& other) {
     mWidth = other.mWidth;
     mHeight = other.mHeight;
@@ -51,7 +57,7 @@ Mat2D<T>::Mat2D(const Mat2D& other) {
     }
 }
 
-template <typename T>
+template <Numeric T>
 std::vector<T> Mat2D<T>::multiply(const std::vector<T>& aVec) {
     if (aVec.size() != mWidth) {
         throw std::length_error("Attempting to multiply Mat2D with incorrectly sized vector.");
@@ -66,19 +72,19 @@ std::vector<T> Mat2D<T>::multiply(const std::vector<T>& aVec) {
     return output;
 }
 
-template <typename U>
+template <Numeric U>
 std::ostream& operator<<(std::ostream& aOut, Mat2D<U>& aMatrix) {
     for (const auto& row : aMatrix.mData) {
         std::cout << "[ "; 
         for (auto value : row) {
-            std::cout << static_cast<int>(value) << " ";
+            std::cout << std::setw(3) << static_cast<int>(value) << " ";
         }        
         std::cout << "]" << std::endl;
     }
     return aOut;
 }
 
-template <typename T>
+template <Numeric T>
 std::vector<T>& Mat2D<T>::operator[](size_t row) {
     if (row >= mHeight) {
         throw std::out_of_range("Invalid query into matrix");  

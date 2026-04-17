@@ -6,7 +6,7 @@ SRC = $(wildcard src/*.cpp)
 TARGET = main
 
 all: 
-	g++ ${SRC} -Iinclude -o out
+	${CXX} ${CXXFLAGS} ${SRC} -Iinclude -o out
 
 clean:
 	rm out
