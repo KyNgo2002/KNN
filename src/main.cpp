@@ -22,5 +22,7 @@ int main() {
     std::cout << "Training Data: " << std::endl; 
     std::cout << "Number of Images: " << layeredNetwork.trainingDataSize() << std::endl;    
     std::cout << "Number of Labels: " << layeredNetwork.trainingLabelsSize() << std::endl;
+
+    std::cout << layeredNetwork << std::endl;
     return 0;    
 }

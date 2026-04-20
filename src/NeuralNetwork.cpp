@@ -23,6 +23,8 @@ NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers) {
     for (size_t i = 1; i < aLayers.size(); ++i) {
        mWeights.emplace_back(Mat2D<double>(aLayers[i], aLayers[i - 1], 1.0));
     }
+    
+    mActivationFunctions.resize(aLayers.size(), ActivationFunction::Sigmoid);
 }
 
 size_t NeuralNetwork::size() const {
@@ -37,6 +39,19 @@ size_t NeuralNetwork::trainingLabelsSize() const {
     return mTrainingLabels.size();
 }
 
+std::string NeuralNetwork::activationFunctionName(size_t ind) const { 
+    if (ind >= mActivationFunctions.size()) {
+        throw std::out_of_range("Index out of range for retrieving activation function name");
+    }
+    ActivationFunction activationFunction = mActivationFunctions[ind];
+    switch (activationFunction) {
+        case ActivationFunction::Sigmoid:
+            return "Sigmoid";
+        default:
+            throw std::invalid_argument("Unrecognized Activation Function");
+    }
+}
+
 void NeuralNetwork::train() {
     if (mTrainingData.size() != mTrainingLabels.size()) {
         throw std::logic_error("Training data size does not match training labels size. Aborting");
@@ -49,6 +64,13 @@ void NeuralNetwork::setTrainingData(const std::vector<Mat2D<uint8_t>>& aTraining
 
 void NeuralNetwork::setTrainingLabels(const std::vector<Mat2D<uint8_t>>& aTrainingLabels) {
     mTrainingLabels = aTrainingLabels;
+}
+
+void NeuralNetwork::setActivationFunction(ActivationFunction aFunction, size_t ind) {
+    if (ind >= mLayers.size()) {
+        throw std::out_of_range("Invalid index provided to set activation function");
+    }
+    mActivationFunctions[ind] = aFunction;    
 }
 
 void NeuralNetwork::printLayer(size_t aLayerIdx) {
@@ -72,6 +94,7 @@ std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork) {
         aOut << "---Layer " << i + 1 << "---" << std::endl;
         aOut << "Nodes: " << aNeuralNetwork.mLayers[i].size() << std::endl;
         aOut << "Weights: " << std::endl;
+        aOut << "Activation Function: " << aNeuralNetwork.activationFunctionName(i) << std::endl;
         if (i < aNeuralNetwork.size() - 1) {
             aOut << aNeuralNetwork.mWeights[i] << std::endl;
         }

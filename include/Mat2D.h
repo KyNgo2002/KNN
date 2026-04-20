@@ -19,6 +19,7 @@ public:
     Mat2D(size_t aWidth, size_t aHeight, T aValue);
     Mat2D(const Mat2D& other);
 
+    Mat2D<T> add(const Mat2D<T>& aOther);
     std::vector<T> multiply(const std::vector<T>& aVec);
 
     template <Numeric U>
@@ -54,6 +55,13 @@ Mat2D<T>::Mat2D(const Mat2D& other) {
         for (size_t j = 0; j < mWidth; ++j) {
             mData[i][j] = other.mData[i][j];
         }
+    }
+}
+
+template <Numeric T>
+Mat2D<T> Mat2D<T>::add(const Mat2D<T>& aOther) {
+    if (aOther.width() != mWidth || aOther.height() != mHeight) {
+       throw std::invalid_argument("Attempting to add Mat2D with matrix that does not match the current matrix"); 
     }
 }
 
