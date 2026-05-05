@@ -13,8 +13,8 @@ int main() {
     const std::string trainingDataFilePath = "trunk/train-images-idx3-ubyte";
     const std::string trainingLabelsFilePath = "trunk/train-labels-idx1-ubyte";
     
-    std::vector<Mat2D<uint8_t>> images = readFile(trainingDataFilePath); 
-    std::vector<Mat2D<uint8_t>> labels = readFile(trainingLabelsFilePath);
+    std::vector<Mat2D<uint8_t>> images = readImageData(trainingDataFilePath); 
+    std::vector<size_t> labels = readImageLabels(trainingLabelsFilePath);
 
     layeredNetwork.setTrainingData(images);
     layeredNetwork.setTrainingLabels(labels);

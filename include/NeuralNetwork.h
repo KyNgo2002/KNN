@@ -1,5 +1,5 @@
 #ifndef NEURALNETWORK_H
-#define NERUALNETWORK_H
+#define NEURALNETWORK_H
 
 #include "Layer.h"
 #include "Mat2D.h"
@@ -25,7 +25,7 @@ public:
     void train();
     
     void setTrainingData(const std::vector<Mat2D<uint8_t>>& aTrainingData);
-    void setTrainingLabels(const std::vector<Mat2D<uint8_t>>& aTrainingLabels);
+    void setTrainingLabels(const std::vector<size_t>& aTrainingLabels);
 
     void setActivationFunction(ActivationFunction aFunction, size_t ind);
 
@@ -38,7 +38,7 @@ private:
     void backpropagation();
 
     std::vector<Mat2D<uint8_t>> mTrainingData;
-    std::vector<Mat2D<uint8_t>> mTrainingLabels;
+    std::vector<size_t> mTrainingLabels;
 
     std::vector<Layer<double>> mLayers;
     std::vector<Mat2D<double>> mWeights;

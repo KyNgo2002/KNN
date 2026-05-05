@@ -62,7 +62,7 @@ void NeuralNetwork::setTrainingData(const std::vector<Mat2D<uint8_t>>& aTraining
     mTrainingData = aTrainingData;
 }
 
-void NeuralNetwork::setTrainingLabels(const std::vector<Mat2D<uint8_t>>& aTrainingLabels) {
+void NeuralNetwork::setTrainingLabels(const std::vector<size_t>& aTrainingLabels) {
     mTrainingLabels = aTrainingLabels;
 }
 

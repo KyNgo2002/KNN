@@ -60,7 +60,7 @@ Mat2D<T>::Mat2D(const Mat2D& other) {
 
 template <Numeric T>
 Mat2D<T> Mat2D<T>::add(const Mat2D<T>& aOther) {
-    if (aOther.width() != mWidth || aOther.height() != mHeight) {
+    if (aOther.mWidth != mWidth || aOther.mHeight != mHeight) {
        throw std::invalid_argument("Attempting to add Mat2D with matrix that does not match the current matrix"); 
     }
 }
