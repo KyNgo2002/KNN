@@ -13,16 +13,22 @@ int main() {
     const std::string trainingDataFilePath = "trunk/train-images-idx3-ubyte";
     const std::string trainingLabelsFilePath = "trunk/train-labels-idx1-ubyte";
     
+	// Reading training data 
     std::vector<Mat2D<uint8_t>> images = readImageData(trainingDataFilePath); 
     std::vector<size_t> labels = readImageLabels(trainingLabelsFilePath);
 
     layeredNetwork.setTrainingData(images);
     layeredNetwork.setTrainingLabels(labels);
 
+	layeredNetwork.setActivationFunction(0, NeuralNetwork::ActivationFunction::ReLu);
+
     std::cout << "Training Data: " << std::endl; 
     std::cout << "Number of Images: " << layeredNetwork.trainingDataSize() << std::endl;    
     std::cout << "Number of Labels: " << layeredNetwork.trainingLabelsSize() << std::endl;
 
     std::cout << layeredNetwork << std::endl;
+
+	// Training	
+	layeredNetwork.train(1000);
     return 0;    
 }

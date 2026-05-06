@@ -4,9 +4,6 @@
 class Node {
 public:
     Node();
-    void setNext(Node* nextNode);    
-private:
-    Node* mNext;
 };
 
 #endif
