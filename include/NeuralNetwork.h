@@ -36,7 +36,7 @@ public:
     friend std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork);
 
 private:
-    void forward(const Mat2D<uint8_t>& aInput);
+    void forward(const std::vector<uint8_t>& aInput);
     void backpropagation();
 
 	static double Sigmoid(double input);

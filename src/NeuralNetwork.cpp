@@ -25,7 +25,7 @@ NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers) {
     //  - N: Size of the previous layer in the matrix
     mWeights.reserve(aLayers.size() - 1);
     for (size_t i = 1; i < aLayers.size(); ++i) {
-       mWeights.emplace_back(Mat2D<double>(aLayers[i], aLayers[i - 1], 1.0));
+       mWeights.emplace_back(Mat2D<double>(aLayers[i - 1], aLayers[i], 1.0));
     }
     
     mActivationFunctions.resize(aLayers.size(), ActivationFunction::Sigmoid);
@@ -70,20 +70,18 @@ void NeuralNetwork::train(size_t numIterations) {
     if (mTrainingData.size() != mTrainingLabels.size()) {
         throw std::logic_error("Training data size does not match training labels size. Aborting");
     }
-	std::cout << "Starting training" << std::endl;
+	std::cout << "\nStarting training:" << std::endl;
 
 	size_t numTrainingIterations = std::min(numIterations, mTrainingData.size());
 	for (size_t imageIdx = 0; imageIdx < numTrainingIterations; ++imageIdx) {
-		std::cout << "Iteration #:" << imageIdx + 1 << std::endl;
+		std::cout << "\n------Training Iteration #" << imageIdx + 1 << "------" << std::endl;
 		// Forward pass
-		std::cout << "Forward pass" << std::endl;
-		forward(mTrainingData[imageIdx]);
+		forward(mTrainingData[imageIdx].toVec());
 
 		// Backpropagation
-		std::cout << "Backpropagation" << std::endl;
 	}	
 }
-
+	
 void NeuralNetwork::setTrainingData(const std::vector<Mat2D<uint8_t>>& aTrainingData) {
     mTrainingData = aTrainingData;
 }
@@ -105,16 +103,16 @@ void NeuralNetwork::printLayer(size_t aLayerIdx) {
     }
 }
 
-void NeuralNetwork::forward(const Mat2D<uint8_t>& aInput) {
-	if (aInput.mHeight != 1) {
-		std::invalid_argument("Input to forward argument should be a 1 dimensional input matrix.");
-	}
-	std::cout << "Forward pass" << std::endl;
+void NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
+	std::cout << "\nForward pass\n" << std::endl;
 
-	vector<double> ioVector;
+	std::vector<double> ioVector(aInput.begin(), aInput.end());
 	// Propagate initial input through each weights layer in the neural network	
 	for (size_t weightsMatIdx = 0; weightsMatIdx < mWeights.size(); ++weightsMatIdx) {
-		layerOutput = mWeights[weightsMatIdx].multiply(aInput)	
+        std::cout << "---Forward Progress " << weightsMatIdx + 1 << "/" << mWeights.size() << "---" << std::endl;
+        std::cout << "Input Vector size: " << ioVector.size() << std::endl;
+        std::cout << "Weights Matrix size: " << mWeights[weightsMatIdx].size() << std::endl; 
+		ioVector = mWeights[weightsMatIdx].multiply(ioVector);	
 	}
 }
 

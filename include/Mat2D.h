@@ -4,6 +4,7 @@
 #include <concepts>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -19,8 +20,14 @@ public:
     Mat2D(size_t aWidth, size_t aHeight, T aValue);
     Mat2D(const Mat2D& other);
 
+    size_t width();
+    size_t height();
+    std::string size();    
+
     Mat2D<T> add(const Mat2D<T>& aOther);
     std::vector<T> multiply(const std::vector<T>& aVec);
+	
+	std::vector<T> toVec();
 
     template <Numeric U>
     friend std::ostream& operator<<(std::ostream& aOut, Mat2D<U>& aMatrix);
@@ -59,6 +66,21 @@ Mat2D<T>::Mat2D(const Mat2D& other) {
 }
 
 template <Numeric T>
+size_t Mat2D<T>::width() {
+    return mWidth;
+}
+
+template <Numeric T>
+size_t Mat2D<T>::height() {
+    return mHeight;
+}
+
+template <Numeric T>
+std::string Mat2D<T>::size() {
+    return std::to_string(mWidth) + "x" + std::to_string(mHeight);
+}
+
+template <Numeric T>
 Mat2D<T> Mat2D<T>::add(const Mat2D<T>& aOther) {
     if (aOther.mWidth != mWidth || aOther.mHeight != mHeight) {
        throw std::invalid_argument("Attempting to add Mat2D with matrix that does not match the current matrix"); 
@@ -68,16 +90,28 @@ Mat2D<T> Mat2D<T>::add(const Mat2D<T>& aOther) {
 template <Numeric T>
 std::vector<T> Mat2D<T>::multiply(const std::vector<T>& aVec) {
     if (aVec.size() != mWidth) {
-        throw std::length_error("Attempting to multiply Mat2D with incorrectly sized vector.");
+        std::string errorMessage = "Attempting to multiply Mat2D with incorrectly sized vector.\nInput Vector size: " + std::to_string(aVec.size()) + "\nInput Matrix size: " + this->size() + "\n"; 
+        throw std::length_error(errorMessage);
     }
 
     std::vector<T> output(mHeight);
     for (size_t row = 0; row < mHeight; ++row) {
         for (size_t col = 0; col < mWidth; ++col) {
-           output[row] += aVec[row] * mData[row][col]; 
+            output[row] += aVec[col] * mData[row][col]; 
         }
     }
     return output;
+}
+
+template <Numeric T>
+std::vector<T> Mat2D<T>::toVec() {
+	std::vector<T> output(mWidth * mHeight);
+	for (size_t row = 0; row < mHeight; ++row) {
+		for (size_t col = 0; col < mWidth; ++col) {
+			output[row * mWidth + col] = mData[row][col];
+		}
+	} 
+	return output;
 }
 
 template <Numeric U>

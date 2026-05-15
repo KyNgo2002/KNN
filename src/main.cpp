@@ -7,15 +7,17 @@
 #include "../include/Reader.h"
 
 int main() { 
-    std::vector<size_t> layers = {2, 3, 3, 4, 5, 1};
-    NeuralNetwork layeredNetwork(layers);
-
     const std::string trainingDataFilePath = "trunk/train-images-idx3-ubyte";
     const std::string trainingLabelsFilePath = "trunk/train-labels-idx1-ubyte";
     
 	// Reading training data 
     std::vector<Mat2D<uint8_t>> images = readImageData(trainingDataFilePath); 
     std::vector<size_t> labels = readImageLabels(trainingLabelsFilePath);
+    
+    const uint32_t imageVectorSize = images[0].width() * images[0].height();
+
+    std::vector<size_t> layers = {imageVectorSize, 3, 3, 4, 5, 1};
+    NeuralNetwork layeredNetwork(layers);
 
     layeredNetwork.setTrainingData(images);
     layeredNetwork.setTrainingLabels(labels);
@@ -29,6 +31,6 @@ int main() {
     std::cout << layeredNetwork << std::endl;
 
 	// Training	
-	layeredNetwork.train(1000);
+	layeredNetwork.train(2);
     return 0;    
 }
