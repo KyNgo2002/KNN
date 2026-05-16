@@ -16,7 +16,7 @@ int main() {
     
     const uint32_t imageVectorSize = images[0].width() * images[0].height();
 
-    std::vector<size_t> layers = {imageVectorSize, 3, 3, 4, 5, 10};
+    std::vector<size_t> layers = {imageVectorSize, 392, 196, 98, 44, 22, 10};
     NeuralNetwork layeredNetwork(layers);
 
     layeredNetwork.setTrainingData(images);

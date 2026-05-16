@@ -10,7 +10,7 @@
 
 class NeuralNetwork {
 public:
-    using ActFunc = double(*)(double);
+    using ActFunc = double(*)(double, bool);
 
     enum class ActivationFunction {
         Sigmoid,        
@@ -44,9 +44,11 @@ private:
 
     static ActFunc getActivationFunction(ActivationFunction aActivationFunction);
 
-	static double Sigmoid(double input);
-	static double ReLu(double input);
-    
+	static double Sigmoid(double aInput, bool aDerivative = false);
+	static double ReLu(double aInput, bool aDerivative = false);
+   
+    static std::vector<double> Softmax(const std::vector<double>& aInput, bool aDerivative = false);
+ 
     std::vector<Mat2D<uint8_t>> mTrainingData;
     std::vector<size_t> mTrainingLabels;
 

@@ -1,10 +1,8 @@
 #include "../include/NeuralNetwork.h"
 
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
-
-// Constants
-constexpr double cE = 2.718281828459045;
 
 // Constructors
 NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers) {
@@ -130,7 +128,7 @@ std::vector<double> NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
         const auto activationFunction = getActivationFunction(mActivationFunctions[weightsMatIdx]);
         // Apply activation function to each output in the current layer.
         for (size_t ind = 0; ind < ioVector.size(); ++ind) {
-            ioVector[ind] = activationFunction ? activationFunction(ioVector[ind]) : ioVector[ind];
+            ioVector[ind] = activationFunction ? activationFunction(ioVector[ind], false) : ioVector[ind];
         }
 	}
     return ioVector;
@@ -154,12 +152,42 @@ NeuralNetwork::ActFunc NeuralNetwork::getActivationFunction(ActivationFunction a
     return nullptr;
 }
 
-double NeuralNetwork::Sigmoid(double input) {
-	return 1.0 / (1.0 + std::pow(cE, input));
+double NeuralNetwork::Sigmoid(double aInput, bool aDerivative) {
+    if (aDerivative) {
+        return std::exp(-aInput) / std::pow(1 + std::exp(-aInput), 2);
+    }
+	return 1.0 / (1.0 + std::exp(aInput));
 }
 
-double NeuralNetwork::ReLu(double input) {
-	return std::max(0.0, input);
+double NeuralNetwork::ReLu(double aInput, bool aDerivative) {
+    if (aDerivative) {
+        return aInput;
+    }
+	return std::max(0.0, aInput);
+}
+
+std::vector<double> NeuralNetwork::Softmax(const std::vector<double>& aInput, bool aDerivative) {
+    if (aDerivative) {
+        return aInput;
+    }
+    std::vector<double> output(aInput.size());
+
+    double maxElement = *max_element(aInput.begin(), aInput.end());
+    double sum = 0;
+    
+    // Calculate exponentiated of input vector.
+    for (size_t i = 0; i < aInput.size(); ++i) {
+        output[i] = std::exp(aInput[i] - maxElement);
+        sum += output[i]; 
+    }
+
+    // Divide individual exponentiated values by exponentiated sum to bind
+    // sum of output to 1.
+    std::for_each(output.begin(), output.end(), [sum](double& element) {
+        element /= sum;
+    });
+
+    return output;
 }
 
 std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork) {
