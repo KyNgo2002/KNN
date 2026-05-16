@@ -16,13 +16,11 @@ int main() {
     
     const uint32_t imageVectorSize = images[0].width() * images[0].height();
 
-    std::vector<size_t> layers = {imageVectorSize, 3, 3, 4, 5, 1};
+    std::vector<size_t> layers = {imageVectorSize, 3, 3, 4, 5, 10};
     NeuralNetwork layeredNetwork(layers);
 
     layeredNetwork.setTrainingData(images);
     layeredNetwork.setTrainingLabels(labels);
-
-	layeredNetwork.setActivationFunction(0, NeuralNetwork::ActivationFunction::ReLu);
 
     std::cout << "Training Data: " << std::endl; 
     std::cout << "Number of Images: " << layeredNetwork.trainingDataSize() << std::endl;    

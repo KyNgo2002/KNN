@@ -29,6 +29,9 @@ NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers) {
     }
     
     mActivationFunctions.resize(aLayers.size(), ActivationFunction::Sigmoid);
+
+    // First and last layers do not have activation functions.
+    mActivationFunctions[0] = mActivationFunctions[aLayers.size() - 1] = ActivationFunction::None;   
 }
 
 size_t NeuralNetwork::size() const {
@@ -49,6 +52,8 @@ std::string NeuralNetwork::activationFunctionName(size_t ind) const {
     }
     ActivationFunction activationFunction = mActivationFunctions[ind];
     switch (activationFunction) {
+        case ActivationFunction::None:
+            return "None";
         case ActivationFunction::Sigmoid:
             return "Sigmoid";
 		case ActivationFunction::ReLu:
@@ -70,15 +75,16 @@ void NeuralNetwork::train(size_t numIterations) {
     if (mTrainingData.size() != mTrainingLabels.size()) {
         throw std::logic_error("Training data size does not match training labels size. Aborting");
     }
-	std::cout << "\nStarting training:" << std::endl;
+	std::cout << "Starting training:" << std::endl;
 
 	size_t numTrainingIterations = std::min(numIterations, mTrainingData.size());
 	for (size_t imageIdx = 0; imageIdx < numTrainingIterations; ++imageIdx) {
 		std::cout << "\n------Training Iteration #" << imageIdx + 1 << "------" << std::endl;
 		// Forward pass
-		forward(mTrainingData[imageIdx].toVec());
+		std::vector<double> forwardPassResult = forward(mTrainingData[imageIdx].toVec());
 
 		// Backpropagation
+         
 	}	
 }
 	
@@ -94,6 +100,10 @@ void NeuralNetwork::setActivationFunction(size_t ind, ActivationFunction aFuncti
     if (ind >= mLayers.size()) {
         throw std::out_of_range("Invalid index provided to set activation function");
     }
+    if (ind == 0 || ind == mActivationFunctions.size() - 1) {
+        std::cout << "Activation function may not be set for the first and last layers in the network" << std::endl;
+        return;
+    }
     mActivationFunctions[ind] = aFunction;    
 }
 
@@ -103,7 +113,7 @@ void NeuralNetwork::printLayer(size_t aLayerIdx) {
     }
 }
 
-void NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
+std::vector<double> NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
 	std::cout << "\nForward pass\n" << std::endl;
 
 	std::vector<double> ioVector(aInput.begin(), aInput.end());
@@ -112,12 +122,36 @@ void NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
         std::cout << "---Forward Progress " << weightsMatIdx + 1 << "/" << mWeights.size() << "---" << std::endl;
         std::cout << "Input Vector size: " << ioVector.size() << std::endl;
         std::cout << "Weights Matrix size: " << mWeights[weightsMatIdx].size() << std::endl; 
+        
+        // Multiply weights matrix with input vector
 		ioVector = mWeights[weightsMatIdx].multiply(ioVector);	
+
+        // Retrieve Activation Function for current layer
+        const auto activationFunction = getActivationFunction(mActivationFunctions[weightsMatIdx]);
+        // Apply activation function to each output in the current layer.
+        for (size_t ind = 0; ind < ioVector.size(); ++ind) {
+            ioVector[ind] = activationFunction ? activationFunction(ioVector[ind]) : ioVector[ind];
+        }
 	}
+    return ioVector;
 }
 
-void NeuralNetwork::backpropagation() {
+void NeuralNetwork::backpropagation(const std::vector<double>& aForwardOutput) {
 	std::cout << "Backward pass" << std::endl;
+}
+
+NeuralNetwork::ActFunc NeuralNetwork::getActivationFunction(ActivationFunction aActivationFunction) {
+    switch (aActivationFunction) {
+        case ActivationFunction::None:
+            return nullptr;
+        case ActivationFunction::Sigmoid:
+            return Sigmoid;
+        case ActivationFunction::ReLu:
+            return ReLu;
+        default:
+            std::cerr << "Chosen activation function does not have a corresponding implementation" << std::endl;
+    }
+    return nullptr;
 }
 
 double NeuralNetwork::Sigmoid(double input) {
@@ -138,7 +172,7 @@ std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork) {
         if (i < aNeuralNetwork.size() - 1) {
             aOut << aNeuralNetwork.mWeights[i] << std::endl;
         }
-        aOut << "Activation Function: " << aNeuralNetwork.activationFunctionName(i) << std::endl;
+        aOut << "Activation Function: " << aNeuralNetwork.activationFunctionName(i) << std::endl << std::endl;
     }
     return aOut;
 }

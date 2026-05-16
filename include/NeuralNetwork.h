@@ -10,9 +10,12 @@
 
 class NeuralNetwork {
 public:
+    using ActFunc = double(*)(double);
+
     enum class ActivationFunction {
         Sigmoid,        
 		ReLu,
+        None,
     };
 
     NeuralNetwork() = default;
@@ -36,12 +39,14 @@ public:
     friend std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork);
 
 private:
-    void forward(const std::vector<uint8_t>& aInput);
-    void backpropagation();
+    std::vector<double> forward(const std::vector<uint8_t>& aInput);
+    void backpropagation(const std::vector<double>& aForwardOutput);
+
+    static ActFunc getActivationFunction(ActivationFunction aActivationFunction);
 
 	static double Sigmoid(double input);
 	static double ReLu(double input);
-
+    
     std::vector<Mat2D<uint8_t>> mTrainingData;
     std::vector<size_t> mTrainingLabels;
 
