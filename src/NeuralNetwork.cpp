@@ -1,4 +1,5 @@
 #include "../include/NeuralNetwork.h"
+#include "../include/Util.h"
 
 #include <algorithm>
 #include <cmath>
@@ -10,14 +11,17 @@ NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers) {
         throw std::invalid_argument("NeuralNetwork must be initialized with at least 2 layers");
     }
 
+    mEpochs = 1;
     mLearningRate = 0.1;
-
+    
+    mLayerOutputs.reserve(aLayers.size());
     mLayerOutputs.reserve(aLayers.size());
     for (size_t layerSize : aLayers) {
         if (layerSize < 1) {
             throw std::invalid_argument("Layer size must be at least 1");
         }
         mLayerOutputs.emplace_back(layerSize); 
+        mLayerOutputsTransformed.emplace_back(layerSize); 
     }
 
     // Weights matrices are M x N
@@ -81,11 +85,15 @@ void NeuralNetwork::train(size_t numIterations) {
 	for (size_t imageIdx = 0; imageIdx < numTrainingIterations; ++imageIdx) {
 		std::cout << "\n------Training Iteration #" << imageIdx + 1 << "------" << std::endl;
 		// Forward pass
-		std::vector<double> forwardPassResult = forward(mTrainingData[imageIdx].toVec());
+        std::vector<double> output = forward(mTrainingData[imageIdx].toVec());
 
 		// Backpropagation
-        backpropagation(forwardPassResult, mTrainingLabels[imageIdx]); 
+        backpropagation(mTrainingLabels[imageIdx]); 
 	}	
+}
+
+void NeuralNetwork::setEpochs(size_t aEpochs) {
+    mEpochs = aEpochs;
 }
 
 void NeuralNetwork::setLearningRate(double aLearningRate) {
@@ -94,7 +102,7 @@ void NeuralNetwork::setLearningRate(double aLearningRate) {
     }
     mLearningRate = aLearningRate;
 }
-	
+
 void NeuralNetwork::setTrainingData(const std::vector<Mat2D<uint8_t>>& aTrainingData) {
     mTrainingData = aTrainingData;
 }
@@ -114,26 +122,24 @@ void NeuralNetwork::setActivationFunction(size_t ind, ActivationFunction aFuncti
     mActivationFunctions[ind] = aFunction;    
 }
 
-void NeuralNetwork::printLayer(size_t aLayerIdx) {
-    if (aLayerIdx >= mLayerOutputs.size()) {
-        throw std::out_of_range("Layer index out of bounds");
-    }
-}
-
 std::vector<double> NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
 	std::cout << "\nForward pass\n" << std::endl;
 
     mLayerOutputs[0] = std::vector<double>(aInput.begin(), aInput.end());
-	// Propagate initial input through each weights layer in the neural network	
+    mLayerOutputsTransformed[0] = std::vector<double>(aInput.begin(), aInput.end());
+    // Propagate initial input through each weights layer in the neural network	
 	for (size_t weightsMatIdx = 0; weightsMatIdx < mWeights.size(); ++weightsMatIdx) {
         std::cout << "---Forward Progress " << weightsMatIdx + 1 << "/" << mWeights.size() << "---" << std::endl;
         std::cout << "Input Vector size: " << aInput.size() << std::endl;
         std::cout << "Weights Matrix size: " << mWeights[weightsMatIdx].size() << std::endl; 
         
-        std::vector<double>& currOutput = mLayerOutputs[weightsMatIdx + 1]; 
+        std::vector<double>& currOutput = mLayerOutputsTransformed[weightsMatIdx + 1]; 
 
         // Multiply weights matrix with input vector
-		currOutput = mWeights[weightsMatIdx].multiply(mLayerOutputs[weightsMatIdx]);
+		currOutput = mWeights[weightsMatIdx].multiply(mLayerOutputsTransformed[weightsMatIdx]);
+
+        // Save current output as untransformed layer output
+        mLayerOutputs[weightsMatIdx] = currOutput;
 
         // Retrieve Activation Function for current layer
         const auto activationFunction = getActivationFunction(mActivationFunctions[weightsMatIdx]);
@@ -145,12 +151,19 @@ std::vector<double> NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
             }
         } 
 	}
-    return mLayerOutputs.back();
+    return Softmax(mLayerOutputsTransformed.back()); 
 }
 
-void NeuralNetwork::backpropagation(const std::vector<double>& aForwardOutput, size_t aCorrectDigit) {
-	std::cout << "Backward pass" << std::endl;
-    std::vector<double> something = costFunction(aForwardOutput, aCorrectDigit);
+void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
+	std::cout << "\nBackward pass" << std::endl;
+   
+    std::vector<double> delta; 
+    std::vector<uint8_t> expected(10, 0);
+    expected[aCorrectDigit] = 1;
+    for (int idx = mLayerOutputs.size() - 1; idx >= 1; --idx) {
+        std::cout << "---Backward Progress " << mLayerOutputs.size() - idx << "/" << mLayerOutputs.size() - 1 << "---" << std::endl;
+        delta = Util::subtract<double, uint8_t>(mLayerOutputs[idx], expected);
+    } 
 }
 
 NeuralNetwork::ActFunc NeuralNetwork::getActivationFunction(ActivationFunction aActivationFunction) {
@@ -200,10 +213,7 @@ double NeuralNetwork::ReLu(double aInput, bool aDerivative) {
 	return std::max(0.0, aInput);
 }
 
-std::vector<double> NeuralNetwork::Softmax(const std::vector<double>& aInput, bool aDerivative) {
-    if (aDerivative) {
-        return aInput;
-    }
+std::vector<double> NeuralNetwork::Softmax(const std::vector<double>& aInput) {
     std::vector<double> output(aInput.size());
 
     double maxElement = *max_element(aInput.begin(), aInput.end());
@@ -225,14 +235,16 @@ std::vector<double> NeuralNetwork::Softmax(const std::vector<double>& aInput, bo
 }
 
 std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork) {
-    aOut << "Neural Network parameters: " << std::endl;
+    aOut << "------Neural Network parameters------" << std::endl;
     aOut << "Size: " << aNeuralNetwork.size() << std::endl;
+    aOut << "Epochs: " << aNeuralNetwork.mEpochs << std::endl;
+    aOut << "Learning Rate: " << aNeuralNetwork.mLearningRate << std::endl << std::endl;
     for (size_t i = 0; i < aNeuralNetwork.size(); ++i) {
         aOut << "---Layer " << i + 1 << "---" << std::endl;
         aOut << "Nodes: " << aNeuralNetwork.mLayerOutputs[i].size() << std::endl;
         aOut << "Weights: " << std::endl;
         if (i < aNeuralNetwork.size() - 1) {
-            aOut << aNeuralNetwork.mWeights[i] << std::endl;
+            //aOut << aNeuralNetwork.mWeights[i] << std::endl;
         }
         aOut << "Activation Function: " << aNeuralNetwork.activationFunctionName(i) << std::endl << std::endl;
     }
