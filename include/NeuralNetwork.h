@@ -40,9 +40,11 @@ public:
 
 private:
     std::vector<double> forward(const std::vector<uint8_t>& aInput);
-    void backpropagation(const std::vector<double>& aForwardOutput);
+    void backpropagation(const std::vector<double>& aForwardOutput, size_t aCorrectDigit);
 
     static ActFunc getActivationFunction(ActivationFunction aActivationFunction);
+    
+    static std::vector<double> costFunction(const std::vector<double>& aInput, size_t aCorrectDigit);
 
 	static double Sigmoid(double aInput, bool aDerivative = false);
 	static double ReLu(double aInput, bool aDerivative = false);

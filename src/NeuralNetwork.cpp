@@ -82,7 +82,7 @@ void NeuralNetwork::train(size_t numIterations) {
 		std::vector<double> forwardPassResult = forward(mTrainingData[imageIdx].toVec());
 
 		// Backpropagation
-         
+        backpropagation(forwardPassResult, mTrainingLabels[imageIdx]); 
 	}	
 }
 	
@@ -134,8 +134,9 @@ std::vector<double> NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
     return ioVector;
 }
 
-void NeuralNetwork::backpropagation(const std::vector<double>& aForwardOutput) {
+void NeuralNetwork::backpropagation(const std::vector<double>& aForwardOutput, size_t aCorrectDigit) {
 	std::cout << "Backward pass" << std::endl;
+    std::vector<double> something = costFunction(aForwardOutput, aCorrectDigit);
 }
 
 NeuralNetwork::ActFunc NeuralNetwork::getActivationFunction(ActivationFunction aActivationFunction) {
@@ -150,6 +151,25 @@ NeuralNetwork::ActFunc NeuralNetwork::getActivationFunction(ActivationFunction a
             std::cerr << "Chosen activation function does not have a corresponding implementation" << std::endl;
     }
     return nullptr;
+}
+
+std::vector<double> NeuralNetwork::costFunction(const std::vector<double>& aInput, size_t aCorrectDigit) {
+    if (aInput.size() != 10) {
+        throw std::logic_error("Cost Function error: Input vector should be size 10");
+    }
+    if (aCorrectDigit >= 10) {
+        throw std::logic_error("Cost Function error: Correct expected digit should be less than 10");
+    }
+    std::vector<double> output(aInput.size());
+    for (size_t i = 0; i < aInput.size(); ++i) {
+        if (i == aCorrectDigit) {
+            output[i] = -std::log(aInput[i]);
+        }
+        else {
+            output[i] = -std::log(1 - aInput[i]);
+        }
+    }
+    return output;
 }
 
 double NeuralNetwork::Sigmoid(double aInput, bool aDerivative) {
