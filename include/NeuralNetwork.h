@@ -1,7 +1,6 @@
 #ifndef NEURALNETWORK_H
 #define NEURALNETWORK_H
 
-#include "Layer.h"
 #include "Mat2D.h"
 
 #include <cstdint>
@@ -28,7 +27,9 @@ public:
 
 	void train();
     void train(size_t numIterations);
-    
+   
+    void setLearningRate(double aLearningRate);
+ 
     void setTrainingData(const std::vector<Mat2D<uint8_t>>& aTrainingData);
     void setTrainingLabels(const std::vector<size_t>& aTrainingLabels);
 
@@ -50,11 +51,13 @@ private:
 	static double ReLu(double aInput, bool aDerivative = false);
    
     static std::vector<double> Softmax(const std::vector<double>& aInput, bool aDerivative = false);
+
+    double mLearningRate; 
  
     std::vector<Mat2D<uint8_t>> mTrainingData;
     std::vector<size_t> mTrainingLabels;
 
-    std::vector<Layer<double>> mLayers;
+    std::vector<std::vector<double>> mLayerOutputs;
     std::vector<Mat2D<double>> mWeights;
     std::vector<ActivationFunction> mActivationFunctions;
 };

@@ -10,12 +10,14 @@ NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers) {
         throw std::invalid_argument("NeuralNetwork must be initialized with at least 2 layers");
     }
 
-    mLayers.reserve(aLayers.size());
-    for (auto layerSize : aLayers) {
+    mLearningRate = 0.1;
+
+    mLayerOutputs.reserve(aLayers.size());
+    for (size_t layerSize : aLayers) {
         if (layerSize < 1) {
             throw std::invalid_argument("Layer size must be at least 1");
         }
-        mLayers.emplace_back(layerSize);
+        mLayerOutputs.emplace_back(layerSize); 
     }
 
     // Weights matrices are M x N
@@ -33,7 +35,7 @@ NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers) {
 }
 
 size_t NeuralNetwork::size() const {
-    return mLayers.size();
+    return mLayerOutputs.size();
 }
 
 size_t NeuralNetwork::trainingDataSize() const {
@@ -73,8 +75,8 @@ void NeuralNetwork::train(size_t numIterations) {
     if (mTrainingData.size() != mTrainingLabels.size()) {
         throw std::logic_error("Training data size does not match training labels size. Aborting");
     }
-	std::cout << "Starting training:" << std::endl;
 
+	std::cout << "Starting training:" << std::endl;
 	size_t numTrainingIterations = std::min(numIterations, mTrainingData.size());
 	for (size_t imageIdx = 0; imageIdx < numTrainingIterations; ++imageIdx) {
 		std::cout << "\n------Training Iteration #" << imageIdx + 1 << "------" << std::endl;
@@ -84,6 +86,13 @@ void NeuralNetwork::train(size_t numIterations) {
 		// Backpropagation
         backpropagation(forwardPassResult, mTrainingLabels[imageIdx]); 
 	}	
+}
+
+void NeuralNetwork::setLearningRate(double aLearningRate) {
+    if (aLearningRate <= 0) {
+        std::cout << "Learning rate must be larger than 0.0" << std::endl;
+    }
+    mLearningRate = aLearningRate;
 }
 	
 void NeuralNetwork::setTrainingData(const std::vector<Mat2D<uint8_t>>& aTrainingData) {
@@ -95,7 +104,7 @@ void NeuralNetwork::setTrainingLabels(const std::vector<size_t>& aTrainingLabels
 }
 
 void NeuralNetwork::setActivationFunction(size_t ind, ActivationFunction aFunction) {
-    if (ind >= mLayers.size()) {
+    if (ind >= mLayerOutputs.size()) {
         throw std::out_of_range("Invalid index provided to set activation function");
     }
     if (ind == 0 || ind == mActivationFunctions.size() - 1) {
@@ -106,7 +115,7 @@ void NeuralNetwork::setActivationFunction(size_t ind, ActivationFunction aFuncti
 }
 
 void NeuralNetwork::printLayer(size_t aLayerIdx) {
-    if (aLayerIdx >= mLayers.size()) {
+    if (aLayerIdx >= mLayerOutputs.size()) {
         throw std::out_of_range("Layer index out of bounds");
     }
 }
@@ -114,24 +123,29 @@ void NeuralNetwork::printLayer(size_t aLayerIdx) {
 std::vector<double> NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
 	std::cout << "\nForward pass\n" << std::endl;
 
-	std::vector<double> ioVector(aInput.begin(), aInput.end());
+    mLayerOutputs[0] = std::vector<double>(aInput.begin(), aInput.end());
 	// Propagate initial input through each weights layer in the neural network	
 	for (size_t weightsMatIdx = 0; weightsMatIdx < mWeights.size(); ++weightsMatIdx) {
         std::cout << "---Forward Progress " << weightsMatIdx + 1 << "/" << mWeights.size() << "---" << std::endl;
-        std::cout << "Input Vector size: " << ioVector.size() << std::endl;
+        std::cout << "Input Vector size: " << aInput.size() << std::endl;
         std::cout << "Weights Matrix size: " << mWeights[weightsMatIdx].size() << std::endl; 
         
+        std::vector<double>& currOutput = mLayerOutputs[weightsMatIdx + 1]; 
+
         // Multiply weights matrix with input vector
-		ioVector = mWeights[weightsMatIdx].multiply(ioVector);	
+		currOutput = mWeights[weightsMatIdx].multiply(mLayerOutputs[weightsMatIdx]);
 
         // Retrieve Activation Function for current layer
         const auto activationFunction = getActivationFunction(mActivationFunctions[weightsMatIdx]);
+    
         // Apply activation function to each output in the current layer.
-        for (size_t ind = 0; ind < ioVector.size(); ++ind) {
-            ioVector[ind] = activationFunction ? activationFunction(ioVector[ind], false) : ioVector[ind];
-        }
+        for (double& element : currOutput) {
+            if (activationFunction) {
+                element = activationFunction(element, false);
+            }
+        } 
 	}
-    return ioVector;
+    return mLayerOutputs.back();
 }
 
 void NeuralNetwork::backpropagation(const std::vector<double>& aForwardOutput, size_t aCorrectDigit) {
@@ -215,7 +229,7 @@ std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork) {
     aOut << "Size: " << aNeuralNetwork.size() << std::endl;
     for (size_t i = 0; i < aNeuralNetwork.size(); ++i) {
         aOut << "---Layer " << i + 1 << "---" << std::endl;
-        aOut << "Nodes: " << aNeuralNetwork.mLayers[i].size() << std::endl;
+        aOut << "Nodes: " << aNeuralNetwork.mLayerOutputs[i].size() << std::endl;
         aOut << "Weights: " << std::endl;
         if (i < aNeuralNetwork.size() - 1) {
             aOut << aNeuralNetwork.mWeights[i] << std::endl;
