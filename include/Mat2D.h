@@ -26,7 +26,9 @@ public:
 
     Mat2D<T> add(const Mat2D<T>& aOther);
     std::vector<T> multiply(const std::vector<T>& aVec);
+    Mat2D<T> scalar(double aScalar);
 	
+    Mat2D<T> transpose();
 	std::vector<T> toVec();
 
     template <Numeric U>
@@ -77,7 +79,7 @@ size_t Mat2D<T>::height() {
 
 template <Numeric T>
 std::string Mat2D<T>::size() {
-    return std::to_string(mWidth) + "x" + std::to_string(mHeight);
+    return std::to_string(mHeight) + "x" + std::to_string(mWidth);
 }
 
 template <Numeric T>
@@ -98,6 +100,22 @@ std::vector<T> Mat2D<T>::multiply(const std::vector<T>& aVec) {
     for (size_t row = 0; row < mHeight; ++row) {
         for (size_t col = 0; col < mWidth; ++col) {
             output[row] += aVec[col] * mData[row][col]; 
+        }
+    }
+    return output;
+}
+
+template <Numeric T>
+Mat2D<T> Mat2D<T>::scalar(double scalar) {
+    
+}
+
+template <Numeric T>
+Mat2D<T> Mat2D<T>::transpose() {
+    Mat2D<T> output(mHeight, mWidth);
+    for (size_t i = 0; i < mHeight; ++i) {
+        for (size_t j = 0; j < mWidth; ++j) {
+            output[j][i] = mData[i][j];  
         }
     }
     return output;

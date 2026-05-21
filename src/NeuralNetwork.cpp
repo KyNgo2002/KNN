@@ -130,7 +130,7 @@ std::vector<double> NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
     // Propagate initial input through each weights layer in the neural network	
 	for (size_t weightsMatIdx = 0; weightsMatIdx < mWeights.size(); ++weightsMatIdx) {
         std::cout << "---Forward Progress " << weightsMatIdx + 1 << "/" << mWeights.size() << "---" << std::endl;
-        std::cout << "Input Vector size: " << aInput.size() << std::endl;
+        std::cout << "Input Vector size: " << mLayerOutputs[weightsMatIdx].size() << std::endl;
         std::cout << "Weights Matrix size: " << mWeights[weightsMatIdx].size() << std::endl; 
         
         std::vector<double>& currOutput = mLayerOutputsTransformed[weightsMatIdx + 1]; 
@@ -160,9 +160,24 @@ void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
     std::vector<double> delta; 
     std::vector<uint8_t> expected(10, 0);
     expected[aCorrectDigit] = 1;
-    for (int idx = mLayerOutputs.size() - 1; idx >= 1; --idx) {
-        std::cout << "---Backward Progress " << mLayerOutputs.size() - idx << "/" << mLayerOutputs.size() - 1 << "---" << std::endl;
-        delta = Util::subtract<double, uint8_t>(mLayerOutputs[idx], expected);
+    for (size_t idx = 0; idx < mWeights.size(); ++idx) {
+        std::cout << "---Backward Progress " << idx + 1 << "/" <<  mWeights.size() << "---" << std::endl;
+        if (idx == 0) {
+            delta = Util::subtract(mLayerOutputsTransformed.back(), expected);
+        }
+        else {
+            delta = mWeights[mWeights.size() - idx].transpose().multiply(delta);
+            auto& currLayerOutput = mLayerOutputs[mWeights.size() - idx - 1];
+            const auto activationFunction = getActivationFunction(mActivationFunctions[mActivationFunctions.size() - idx]);
+            if (activationFunction) {
+                for (double& element : currLayerOutput) {
+                    element = activationFunction(element, true); 
+                }
+            }
+            delta = Util::dot(delta, currLayerOutput);
+            
+            std::vector<double> deltaW = Util::dot(delta, mLayerOutputsTransformed[mWeights.size() - idx]);
+        }
     } 
 }
 
