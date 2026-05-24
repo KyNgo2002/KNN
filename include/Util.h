@@ -20,7 +20,7 @@ std::vector<T> Subtract(const std::vector<T>& aFirst, const std::vector<U>& aSec
 template <typename T>
 std::vector<T> multiply(const std::vector<T>& aFirst, const std::vector<T>& aSecond) {
     if (aFirst.size() != aSecond.size()) {
-        std::string errorMessage = "Vector Dot Product: Size of both input vectors must be equal.\nFirst vector size: " + std::to_string(aFirst.size()) + "\nSecond vector size: " + std::to_string(aSecond.size()) + "\n";  
+        std::string errorMessage = "Vector Multiply: Size of both input vectors must be equal.\nFirst vector size: " + std::to_string(aFirst.size()) + "\nSecond vector size: " + std::to_string(aSecond.size()) + "\n";  
         throw std::invalid_argument(errorMessage);
     }
     std::vector<T> output(aFirst.size());
@@ -33,12 +33,9 @@ std::vector<T> multiply(const std::vector<T>& aFirst, const std::vector<T>& aSec
 template <typename T>
 Mat2D<T> VecToMatrix(const std::vector<T>& aFirst, const std::vector<T> aSecond) {
     Mat2D<T> output(aFirst.size(), aSecond.size());
-    std::cout << aFirst.size() << " " << aSecond.size() << std::endl;
     for (size_t i = 0; i < aFirst.size(); ++i) {
         for (size_t j = 0; j < aSecond.size(); ++j) {
-//            output[i][j] = aFirst[i] * aSecond[j];
-
-            output[i][j] = 10;
+            output[i][j] = aFirst[i] * aSecond[j];
         }
     }
     return output;

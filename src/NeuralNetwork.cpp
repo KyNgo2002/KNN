@@ -89,7 +89,7 @@ void NeuralNetwork::train(size_t numIterations) {
         Util::Print(output);
 
 		// Backpropagation
-        //backpropagation(mTrainingLabels[imageIdx]); 
+        backpropagation(mTrainingLabels[imageIdx]); 
 	}	
 }
 
@@ -163,22 +163,27 @@ void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
     std::vector<double> delta; 
     std::vector<uint8_t> expected(10, 0);
     expected[aCorrectDigit] = 1;
-    for (size_t idx = 0; idx < mWeights.size(); ++idx) {
-        std::cout << "---Backward Progress " << idx + 1 << "/" <<  mWeights.size() << "---" << std::endl;
+    for (size_t idx = 0; idx <= mWeights.size(); ++idx) {
+        std::cout << "---Backward Progress " << idx + 1 << "/" <<  mWeights.size() + 1 << "---" << std::endl;
+        std::cout << activationFunctionName(mActivationFunctions.size() - idx - 1) << std::endl;
         if (idx == 0) {
             delta = Util::Subtract(mLayerOutputsTransformed.back(), expected);
         }
         else {
             delta = mWeights[mWeights.size() - idx].transpose().multiply(delta);
-            auto currLayerOutput = mLayerOutputs[mWeights.size() - idx - 1];
-            const auto activationFunction = getActivationFunction(mActivationFunctions[mActivationFunctions.size() - idx]);
+            auto currLayerOutput = mLayerOutputs[mLayerOutputs.size() - idx - 1];
+            const auto activationFunction = getActivationFunction(mActivationFunctions[mActivationFunctions.size() - idx - 1]);
             if (activationFunction) {
                 for (double& element : currLayerOutput) {
                     element = activationFunction(element, true); 
                 }
             }
             delta = Util::multiply(delta, currLayerOutput);
-            Mat2D<double> deltaW = Util::VecToMatrix(delta, mLayerOutputsTransformed[mWeights.size() - idx - 1]);
+            std::cout << mLayerOutputsTransformed[mLayerOutputsTransformed.size() - idx - 1].size() << std::endl;
+            Mat2D<double> deltaW = Util::VecToMatrix(delta, mLayerOutputsTransformed[mLayerOutputsTransformed.size() - idx]);
+            std::cout << "test " << std::endl; 
+            // Gradient descent weight updates
+            mWeights[mWeights.size() - idx] = mWeights[mWeights.size() - idx] - deltaW.scalar(mLearningRate);
         }
     } 
 }

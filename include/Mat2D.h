@@ -18,11 +18,12 @@ public:
     Mat2D() = default;
     Mat2D(size_t aWidth, size_t aHeight);
     Mat2D(size_t aWidth, size_t aHeight, T aValue);
-    Mat2D(const Mat2D& other);
+    Mat2D(const Mat2D<T>& aOther);
+    Mat2D<T>& operator=(const Mat2D<T>& aOther);
 
-    size_t width();
-    size_t height();
-    std::string size();    
+    size_t width() const;
+    size_t height() const;
+    std::string size() const;    
 
     Mat2D<T> add(const Mat2D<T>& aOther);
     std::vector<T> multiply(const std::vector<T>& aVec);
@@ -31,10 +32,14 @@ public:
     Mat2D<T> transpose();
 	std::vector<T> toVec();
 
+    std::vector<T>& operator[](size_t row);
+    const std::vector<T>& operator[](size_t row) const;
+
+    Mat2D<T> operator-(const Mat2D<T>& aMat);
+
     template <Numeric U>
     friend std::ostream& operator<<(std::ostream& aOut, Mat2D<U>& aMatrix);
 
-    std::vector<T>& operator[](size_t row);
 private:
     size_t mWidth;
     size_t mHeight;
@@ -56,29 +61,42 @@ Mat2D<T>::Mat2D(size_t aWidth, size_t aHeight, T value) {
 }
 
 template <Numeric T>
-Mat2D<T>::Mat2D(const Mat2D& other) {
-    mWidth = other.mWidth;
-    mHeight = other.mHeight;
+Mat2D<T>& Mat2D<T>::operator=(const Mat2D<T>& aOther) {
+    mHeight = aOther.mHeight;
+    mWidth = aOther.mWidth;
     mData.resize(mHeight, std::vector<T>(mWidth));
     for (size_t i = 0; i < mHeight; ++i) {
         for (size_t j = 0; j < mWidth; ++j) {
-            mData[i][j] = other.mData[i][j];
+            mData[i][j] = aOther[i][j];
+        }
+    }
+    return *this;
+}
+
+template <Numeric T>
+Mat2D<T>::Mat2D(const Mat2D<T>& aOther) {
+    mWidth = aOther.mWidth;
+    mHeight = aOther.mHeight;
+    mData.resize(mHeight, std::vector<T>(mWidth));
+    for (size_t i = 0; i < mHeight; ++i) {
+        for (size_t j = 0; j < mWidth; ++j) {
+            mData[i][j] = aOther.mData[i][j];
         }
     }
 }
 
 template <Numeric T>
-size_t Mat2D<T>::width() {
+size_t Mat2D<T>::width() const {
     return mWidth;
 }
 
 template <Numeric T>
-size_t Mat2D<T>::height() {
+size_t Mat2D<T>::height() const {
     return mHeight;
 }
 
 template <Numeric T>
-std::string Mat2D<T>::size() {
+std::string Mat2D<T>::size() const {
     return std::to_string(mHeight) + "x" + std::to_string(mWidth);
 }
 
@@ -92,7 +110,7 @@ Mat2D<T> Mat2D<T>::add(const Mat2D<T>& aOther) {
 template <Numeric T>
 std::vector<T> Mat2D<T>::multiply(const std::vector<T>& aVec) {
     if (aVec.size() != mWidth) {
-        std::string errorMessage = "Attempting to multiply Mat2D with incorrectly sized vector.\nInput Vector size: " + std::to_string(aVec.size()) + "\nInput Matrix size: " + this->size() + "\n"; 
+        std::string errorMessage = "Attempting to multiply Mat2D with incorrectly sized vector.\nInput Vector size: " + std::to_string(aVec.size()) + "\nInput Matrix size: " + this->size() + "\n";
         throw std::length_error(errorMessage);
     }
 
@@ -107,7 +125,12 @@ std::vector<T> Mat2D<T>::multiply(const std::vector<T>& aVec) {
 
 template <Numeric T>
 Mat2D<T> Mat2D<T>::scalar(double scalar) {
-    
+    for (auto& row : mData) {
+        for (T& elem : row) {
+            elem = elem * scalar;
+        }
+    }
+    return *this; 
 }
 
 template <Numeric T>
@@ -132,6 +155,40 @@ std::vector<T> Mat2D<T>::toVec() {
 	return output;
 }
 
+template <Numeric T>
+std::vector<T>& Mat2D<T>::operator[](size_t row) {
+    if (row >= mHeight) {
+        throw std::out_of_range("Invalid query into matrix");  
+    }
+    return mData[row];
+}
+
+template <Numeric T>
+const std::vector<T>& Mat2D<T>::operator[](size_t row) const {
+    if (row >= mHeight) {
+        throw std::out_of_range("Invalid query into matrix");  
+    }
+    return mData[row];
+}
+
+
+template <Numeric T>
+Mat2D<T> Mat2D<T>::operator-(const Mat2D<T>& aMat) {
+    if (mHeight != aMat.height() || mWidth != aMat.width()) {
+        std::string errorMessage = "Invalid matrix subtraction. Matrix sizes must match to perform subtraction.\n";
+        errorMessage += std::string("First matrix dimensions: ") + size() + "\n";
+        errorMessage += std::string("Second matrix dimensions: ") + aMat.size() + "\n";
+        throw std::invalid_argument(errorMessage);
+    }
+    Mat2D<T> output(mHeight, mWidth);
+    for (size_t i = 0; i < mHeight; ++i) {
+        for (size_t j = 0; j < mWidth; ++j) {
+            output[i][j] = mData[i][j] - aMat[i][j]; 
+        }
+    }
+    return output;
+}
+
 template <Numeric U>
 std::ostream& operator<<(std::ostream& aOut, Mat2D<U>& aMatrix) {
     for (const auto& row : aMatrix.mData) {
@@ -144,11 +201,4 @@ std::ostream& operator<<(std::ostream& aOut, Mat2D<U>& aMatrix) {
     return aOut;
 }
 
-template <Numeric T>
-std::vector<T>& Mat2D<T>::operator[](size_t row) {
-    if (row >= mHeight) {
-        throw std::out_of_range("Invalid query into matrix");  
-    }
-    return mData[row];
-}
 #endif
