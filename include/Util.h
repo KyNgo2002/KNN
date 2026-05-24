@@ -52,6 +52,15 @@ std::vector<T> Scalar(std::vector<T>& aVec, double scalar) {
     } 
 }
 
+template <typename T>
+void Print(std::vector<T>& aVec) {
+    std::cout << "[ ";
+    for (size_t ind = 0; ind < aVec.size(); ++ind) {
+        std::cout << aVec[ind] << " ";
+    }
+    std::cout << "]" << std::endl;
+}
+
 } // namespace Util
 
 #endif

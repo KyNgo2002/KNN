@@ -6,16 +6,14 @@
 #include <stdexcept>
 
 // Constructors
-NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers) {
+NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers) 
+    : mGenerator{std::random_device()()}, mDist{-1.0, 1.0}, mEpochs{1}, mLearningRate{0.1} {
     if (aLayers.size() < 2) {
         throw std::invalid_argument("NeuralNetwork must be initialized with at least 2 layers");
     }
 
-    mEpochs = 1;
-    mLearningRate = 0.1;
-    
     mLayerOutputs.reserve(aLayers.size());
-    mLayerOutputs.reserve(aLayers.size());
+    mLayerOutputsTransformed.reserve(aLayers.size());
     for (size_t layerSize : aLayers) {
         if (layerSize < 1) {
             throw std::invalid_argument("Layer size must be at least 1");
@@ -30,6 +28,7 @@ NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers) {
     mWeights.reserve(aLayers.size() - 1);
     for (size_t i = 1; i < aLayers.size(); ++i) {
        mWeights.emplace_back(Mat2D<double>(aLayers[i - 1], aLayers[i], 1.0));
+       randomizeMatrix(mWeights.back());
     }
     
     mActivationFunctions.resize(aLayers.size(), ActivationFunction::Sigmoid);
@@ -86,9 +85,11 @@ void NeuralNetwork::train(size_t numIterations) {
 		std::cout << "\n------Training Iteration #" << imageIdx + 1 << "------" << std::endl;
 		// Forward pass
         std::vector<double> output = forward(mTrainingData[imageIdx].toVec());
+        std::cout << "\nForward pass output: " << std::endl;
+        Util::Print(output);
 
 		// Backpropagation
-        backpropagation(mTrainingLabels[imageIdx]); 
+        //backpropagation(mTrainingLabels[imageIdx]); 
 	}	
 }
 
@@ -125,24 +126,26 @@ void NeuralNetwork::setActivationFunction(size_t ind, ActivationFunction aFuncti
 std::vector<double> NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
 	std::cout << "\nForward pass\n" << std::endl;
 
+    // The first layer outputs the image input data 
     mLayerOutputs[0] = std::vector<double>(aInput.begin(), aInput.end());
     mLayerOutputsTransformed[0] = std::vector<double>(aInput.begin(), aInput.end());
-    // Propagate initial input through each weights layer in the neural network	
-	for (size_t weightsMatIdx = 0; weightsMatIdx < mWeights.size(); ++weightsMatIdx) {
-        std::cout << "---Forward Progress " << weightsMatIdx + 1 << "/" << mWeights.size() << "---" << std::endl;
-        std::cout << "Input Vector size: " << mLayerOutputs[weightsMatIdx].size() << std::endl;
-        std::cout << "Weights Matrix size: " << mWeights[weightsMatIdx].size() << std::endl; 
+    
+    // Propagate input through each layer in the network, applying weights between each layer
+	for (size_t weightsIdx = 0; weightsIdx < mWeights.size(); ++weightsIdx) {
+        std::cout << "---Forward Progress " << weightsIdx + 1 << "/" << mWeights.size() << "---" << std::endl;
+        std::cout << "Input Vector size: " << mLayerOutputs[weightsIdx].size() << std::endl;
+        std::cout << "Weights Matrix size: " << mWeights[weightsIdx].size() << std::endl; 
         
-        std::vector<double>& currOutput = mLayerOutputsTransformed[weightsMatIdx + 1]; 
+        std::vector<double>& currOutput = mLayerOutputsTransformed[weightsIdx + 1]; 
 
-        // Multiply weights matrix with input vector
-		currOutput = mWeights[weightsMatIdx].multiply(mLayerOutputsTransformed[weightsMatIdx]);
+        // Multiply weights matrix with output from previous layer
+		currOutput = mWeights[weightsIdx].multiply(mLayerOutputsTransformed[weightsIdx]);
 
         // Save current output as untransformed layer output
-        mLayerOutputs[weightsMatIdx] = currOutput;
+        mLayerOutputs[weightsIdx + 1] = currOutput;
 
         // Retrieve Activation Function for current layer
-        const auto activationFunction = getActivationFunction(mActivationFunctions[weightsMatIdx]);
+        const auto activationFunction = getActivationFunction(mActivationFunctions[weightsIdx]);
     
         // Apply activation function to each output in the current layer.
         for (double& element : currOutput) {
@@ -246,6 +249,14 @@ std::vector<double> NeuralNetwork::Softmax(const std::vector<double>& aInput) {
     });
 
     return output;
+}
+
+void NeuralNetwork::randomizeMatrix(Mat2D<double>& aMat) {
+    for (size_t i = 0; i < aMat.height(); ++i) {
+        for (size_t j = 0; j < aMat.width(); ++j) {
+            aMat[i][j] = mDist(mGenerator);
+        }
+    }
 }
 
 std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork) {

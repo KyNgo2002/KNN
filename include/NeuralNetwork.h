@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <random>
 #include <vector>
 
 class NeuralNetwork {
@@ -51,6 +52,11 @@ private:
 	static double ReLu(double aInput, bool aDerivative = false);
    
     static std::vector<double> Softmax(const std::vector<double>& aInput);
+
+    void randomizeMatrix(Mat2D<double>& aMat);
+
+    std::mt19937 mGenerator;
+    std::uniform_real_distribution<double> mDist;
 
     size_t mEpochs;
     double mLearningRate; 
