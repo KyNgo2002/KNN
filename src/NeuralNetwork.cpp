@@ -33,8 +33,8 @@ NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers)
     
     mActivationFunctions.resize(aLayers.size(), ActivationFunction::Sigmoid);
 
-    // First and last layers do not have activation functions.
-    mActivationFunctions[0] = mActivationFunctions[aLayers.size() - 1] = ActivationFunction::None;   
+    // The last layer does not have an activation functions
+    mActivationFunctions[aLayers.size() - 1] = ActivationFunction::None;   
 }
 
 size_t NeuralNetwork::size() const {
@@ -88,7 +88,7 @@ void NeuralNetwork::train(size_t numIterations) {
         Util::Print(output);
 
 		// Backpropagation
-        backpropagation(mTrainingLabels[imageIdx]); 
+        //backpropagation(mTrainingLabels[imageIdx]); 
 	}	
 }
 
@@ -139,7 +139,7 @@ std::vector<double> NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
 
         // Multiply weights matrix with output from previous layer
 		currOutput = mWeights[weightsIdx].multiply(mLayerOutputsTransformed[weightsIdx]);
-
+        std::cout << mWeights[weightsIdx] << std::endl;
         // Save current output as untransformed layer output
         mLayerOutputs[weightsIdx + 1] = currOutput;
 
@@ -151,7 +151,8 @@ std::vector<double> NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
             if (activationFunction) {
                 element = activationFunction(element, false);
             }
-        } 
+        }
+        //Util::Print(currOutput);
 	}
     return Softmax(mLayerOutputsTransformed.back()); 
 }
@@ -170,18 +171,19 @@ void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
         }
         else {
             delta = mWeights[mWeights.size() - idx].transpose().multiply(delta);
-            //Util::Print(delta);
             
             auto currLayerOutput = mLayerOutputs[mLayerOutputs.size() - idx - 1];
+            auto currLayerOutputTransformed = mLayerOutputsTransformed[mLayerOutputsTransformed.size() - idx - 1];
+            Util::Print(currLayerOutput);
+            std::cout << "----------------------" << std::endl;
+            Util::Print(currLayerOutputTransformed);
             const auto activationFunction = getActivationFunction(mActivationFunctions[mActivationFunctions.size() - idx - 1]);
             if (activationFunction) {
                 for (double& element : currLayerOutput) {
                     element = activationFunction(element, true); 
                 }
             }
-            Util::Print(delta);
             delta = Util::multiply(delta, currLayerOutput);
-            Util::Print(delta);
 
             Mat2D<double> deltaW = Util::VecToMatrix(mLayerOutputsTransformed[mLayerOutputsTransformed.size() - idx], delta);
 
@@ -230,7 +232,7 @@ double NeuralNetwork::Sigmoid(double aInput, bool aDerivative) {
     if (aDerivative) {
         return std::exp(-aInput) / std::pow(1 + std::exp(-aInput), 2);
     }
-	return 1.0 / (1.0 + std::exp(aInput));
+	return 1.0 / (1.0 + std::exp(-aInput));
 }
 
 double NeuralNetwork::ReLu(double aInput, bool aDerivative) {
