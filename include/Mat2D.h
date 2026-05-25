@@ -16,8 +16,8 @@ class Mat2D {
 // Matrix class
 public:
     Mat2D() = default;
-    Mat2D(size_t aWidth, size_t aHeight);
-    Mat2D(size_t aWidth, size_t aHeight, T aValue);
+    Mat2D(size_t aHeight, size_t aWidth);
+    Mat2D(size_t aHeight, size_t aWidth, T aValue);
     Mat2D(const Mat2D<T>& aOther);
     Mat2D<T>& operator=(const Mat2D<T>& aOther);
 
@@ -38,25 +38,25 @@ public:
     Mat2D<T> operator-(const Mat2D<T>& aMat);
 
     template <Numeric U>
-    friend std::ostream& operator<<(std::ostream& aOut, Mat2D<U>& aMatrix);
+    friend std::ostream& operator<<(std::ostream& aOut, const Mat2D<U>& aMatrix);
 
 private:
-    size_t mWidth;
     size_t mHeight;
+    size_t mWidth;
     std::vector<std::vector<T>> mData;
 };
 
 template <Numeric T>
-Mat2D<T>::Mat2D(size_t aWidth, size_t aHeight) {
-    mWidth = aWidth;
+Mat2D<T>::Mat2D(size_t aHeight, size_t aWidth) {
     mHeight = aHeight;
+    mWidth = aWidth;
     mData.resize(aHeight, std::vector<T>(aWidth));
 }
 
 template <Numeric T>
-Mat2D<T>::Mat2D(size_t aWidth, size_t aHeight, T value) {
-    mWidth = aWidth;
+Mat2D<T>::Mat2D(size_t aHeight, size_t aWidth, T value) {
     mHeight = aHeight;
+    mWidth = aWidth;
     mData.resize(aHeight, std::vector<T>(aWidth, value));
 }
 
@@ -135,7 +135,7 @@ Mat2D<T> Mat2D<T>::scalar(double scalar) {
 
 template <Numeric T>
 Mat2D<T> Mat2D<T>::transpose() {
-    Mat2D<T> output(mHeight, mWidth);
+    Mat2D<T> output(mWidth, mHeight);
     for (size_t i = 0; i < mHeight; ++i) {
         for (size_t j = 0; j < mWidth; ++j) {
             output[j][i] = mData[i][j];  
@@ -176,8 +176,8 @@ template <Numeric T>
 Mat2D<T> Mat2D<T>::operator-(const Mat2D<T>& aMat) {
     if (mHeight != aMat.height() || mWidth != aMat.width()) {
         std::string errorMessage = "Invalid matrix subtraction. Matrix sizes must match to perform subtraction.\n";
-        errorMessage += std::string("First matrix dimensions: ") + size() + "\n";
-        errorMessage += std::string("Second matrix dimensions: ") + aMat.size() + "\n";
+        errorMessage += "First matrix size: " + size() + "\n";
+        errorMessage += "Second matrix size: " + aMat.size() + "\n";
         throw std::invalid_argument(errorMessage);
     }
     Mat2D<T> output(mHeight, mWidth);
@@ -190,11 +190,11 @@ Mat2D<T> Mat2D<T>::operator-(const Mat2D<T>& aMat) {
 }
 
 template <Numeric U>
-std::ostream& operator<<(std::ostream& aOut, Mat2D<U>& aMatrix) {
+std::ostream& operator<<(std::ostream& aOut, const Mat2D<U>& aMatrix) {
     for (const auto& row : aMatrix.mData) {
         std::cout << "[ "; 
         for (auto value : row) {
-            std::cout << std::setw(3) << static_cast<int>(value) << " ";
+            std::cout << std::setw(3) << value << " ";
         }        
         std::cout << "]" << std::endl;
     }

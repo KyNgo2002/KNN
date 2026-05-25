@@ -29,6 +29,7 @@ int main() {
     std::cout << layeredNetwork << std::endl;
 
 	// Training	
-	layeredNetwork.train(2);
+    size_t iterations = 1;
+	layeredNetwork.train(iterations);
     return 0;    
 }
