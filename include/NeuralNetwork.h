@@ -29,6 +29,8 @@ public:
 	void train();
     void train(size_t numIterations);
 
+    void test(const std::vector<Mat2D<uint8_t>>& aImages, const std::vector<size_t>& aLabels);
+
     void setEpochs(size_t aEpochs);
 
     void setLearningRate(double aLearningRate);

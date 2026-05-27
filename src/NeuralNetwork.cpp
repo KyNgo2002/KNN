@@ -85,11 +85,23 @@ void NeuralNetwork::train(size_t numIterations) {
 		std::cout << "\n------Training Iteration #" << imageIdx + 1 << "------" << std::endl;
 		// Forward pass
         std::vector<double> output = forward(mTrainingData[imageIdx].toVec());
+        std::cout << "Forward Pass Output: ";
         Util::Print(output);
 
 		// Backpropagation
-        //backpropagation(mTrainingLabels[imageIdx]); 
+        backpropagation(mTrainingLabels[imageIdx]); 
 	}	
+}
+
+void NeuralNetwork::test(const std::vector<Mat2D<uint8_t>>& aImages, const std::vector<size_t>& aLabels) {
+    if (aImages.size() != aLabels.size()) {
+        std::string errorMessage = "Neural Network test failed: Number of input images and labels must match\n";
+        errorMessage += std::string("Number of images: ") + std::to_string(aImages.size()) + "\n";
+        errorMessage += "Number of labels: " + std::to_string(aLabels.size()) + "\n";
+        throw std::invalid_argument(errorMessage);
+    }
+    (void)aImages;
+    (void)aLabels;
 }
 
 void NeuralNetwork::setEpochs(size_t aEpochs) {
@@ -124,35 +136,44 @@ void NeuralNetwork::setActivationFunction(size_t ind, ActivationFunction aFuncti
 
 std::vector<double> NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
 	std::cout << "\nForward pass\n" << std::endl;
-
+    
+    // TODO: Probably want to do this while reading the file.
+    const auto normalize = [](std::vector<double>& aVec) {
+        for (double& element : aVec) {
+            element /= 255.0;
+        }
+    };
+    
     // The first layer outputs the image input data 
     mLayerOutputs[0] = std::vector<double>(aInput.begin(), aInput.end());
     mLayerOutputsTransformed[0] = std::vector<double>(aInput.begin(), aInput.end());
-    
+
+    normalize(mLayerOutputs[0]);
+    normalize(mLayerOutputsTransformed[0]);
+
     // Propagate input through each layer in the network, applying weights between each layer
 	for (size_t weightsIdx = 0; weightsIdx < mWeights.size(); ++weightsIdx) {
         std::cout << "---Forward Progress " << weightsIdx + 1 << "/" << mWeights.size() << "---" << std::endl;
         std::cout << "Input Vector size: " << mLayerOutputs[weightsIdx].size() << std::endl;
-        std::cout << "Weights Matrix size: " << mWeights[weightsIdx].size() << std::endl; 
+        std::cout << "Weights Matrix size: " << mWeights[weightsIdx].size() << std::endl << std::endl;
         
         std::vector<double>& currOutput = mLayerOutputsTransformed[weightsIdx + 1]; 
 
         // Multiply weights matrix with output from previous layer
 		currOutput = mWeights[weightsIdx].multiply(mLayerOutputsTransformed[weightsIdx]);
-        std::cout << mWeights[weightsIdx] << std::endl;
+
         // Save current output as untransformed layer output
         mLayerOutputs[weightsIdx + 1] = currOutput;
 
         // Retrieve Activation Function for current layer
         const auto activationFunction = getActivationFunction(mActivationFunctions[weightsIdx]);
-    
+
         // Apply activation function to each output in the current layer.
         for (double& element : currOutput) {
             if (activationFunction) {
                 element = activationFunction(element, false);
             }
         }
-        //Util::Print(currOutput);
 	}
     return Softmax(mLayerOutputsTransformed.back()); 
 }
@@ -174,9 +195,6 @@ void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
             
             auto currLayerOutput = mLayerOutputs[mLayerOutputs.size() - idx - 1];
             auto currLayerOutputTransformed = mLayerOutputsTransformed[mLayerOutputsTransformed.size() - idx - 1];
-            Util::Print(currLayerOutput);
-            std::cout << "----------------------" << std::endl;
-            Util::Print(currLayerOutputTransformed);
             const auto activationFunction = getActivationFunction(mActivationFunctions[mActivationFunctions.size() - idx - 1]);
             if (activationFunction) {
                 for (double& element : currLayerOutput) {
@@ -186,8 +204,6 @@ void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
             delta = Util::multiply(delta, currLayerOutput);
 
             Mat2D<double> deltaW = Util::VecToMatrix(mLayerOutputsTransformed[mLayerOutputsTransformed.size() - idx], delta);
-
-            //std::cout << deltaW << std::endl;
 
             // Gradient descent weight updates
             mWeights[mWeights.size() - idx] = mWeights[mWeights.size() - idx] - deltaW.scalar(mLearningRate);
@@ -229,6 +245,7 @@ std::vector<double> NeuralNetwork::costFunction(const std::vector<double>& aInpu
 }
 
 double NeuralNetwork::Sigmoid(double aInput, bool aDerivative) {
+    aInput = std::clamp(aInput, -50.0, 50.0);
     if (aDerivative) {
         return std::exp(-aInput) / std::pow(1 + std::exp(-aInput), 2);
     }
@@ -285,6 +302,7 @@ std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork) {
         }
         aOut << "Activation Function: " << aNeuralNetwork.activationFunctionName(i) << std::endl << std::endl;
     }
+    std::cout << "---------------------------------------------" << std::endl;
     return aOut;
 }
 
