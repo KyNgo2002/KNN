@@ -30,7 +30,7 @@ public:
     Mat2D<T> scalar(double aScalar);
 	
     Mat2D<T> transpose();
-	std::vector<T> toVec();
+	std::vector<T> toVec() const;
 
     std::vector<T>& operator[](size_t row);
     const std::vector<T>& operator[](size_t row) const;
@@ -145,7 +145,7 @@ Mat2D<T> Mat2D<T>::transpose() {
 }
 
 template <Numeric T>
-std::vector<T> Mat2D<T>::toVec() {
+std::vector<T> Mat2D<T>::toVec() const {
 	std::vector<T> output(mWidth * mHeight);
 	for (size_t row = 0; row < mHeight; ++row) {
 		for (size_t col = 0; col < mWidth; ++col) {
@@ -194,7 +194,7 @@ std::ostream& operator<<(std::ostream& aOut, const Mat2D<U>& aMatrix) {
     for (const auto& row : aMatrix.mData) {
         std::cout << "[ "; 
         for (auto value : row) {
-            std::cout << std::setw(3) << value << " ";
+            std::cout << std::setw(5) << std::setprecision(3) << value << " ";
         }        
         std::cout << "]" << std::endl;
     }

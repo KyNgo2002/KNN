@@ -27,7 +27,7 @@ std::vector<size_t> readHeader(std::ifstream& fstream) {
 	return dimensions;
 }
 
-std::vector<Mat2D<uint8_t>> readImageData(const std::string& filePath) {
+std::vector<Mat2D<double>> readImageData(const std::string& filePath) {
 	// Image Data
 	// IDX file format for training data:
 	// Big Endian
@@ -45,11 +45,13 @@ std::vector<Mat2D<uint8_t>> readImageData(const std::string& filePath) {
 	
 	const std::vector<size_t> dimensions = readHeader(fstream);
 	std::cout << "Reading file" << std::endl;
-	std::vector<Mat2D<uint8_t>> images(dimensions[0], Mat2D<uint8_t>(dimensions[1], dimensions[2]));
+	std::vector<Mat2D<double>> images(dimensions[0], Mat2D<double>(dimensions[1], dimensions[2]));
 	for (size_t image = 0; image < dimensions[0]; ++image) {
 		for (size_t i = 0; i < dimensions[1]; ++i) {
 			for (size_t j = 0; j < dimensions[2]; ++j) {
-				fstream.read(reinterpret_cast<char*>(&images[image][i][j]), 1);
+                uint8_t byte;
+                fstream.read(reinterpret_cast<char*>(&byte), 1);
+                images[image][i][j] = (byte / 255.0);
 			} 
 		}
 	}

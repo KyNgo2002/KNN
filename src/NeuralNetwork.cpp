@@ -85,23 +85,39 @@ void NeuralNetwork::train(size_t numIterations) {
 		std::cout << "\n------Training Iteration #" << imageIdx + 1 << "------" << std::endl;
 		// Forward pass
         std::vector<double> output = forward(mTrainingData[imageIdx].toVec());
-        std::cout << "Forward Pass Output: ";
-        Util::Print(output);
 
 		// Backpropagation
         backpropagation(mTrainingLabels[imageIdx]); 
 	}	
+    
+    // Training finished
+    std::cout << "------Training Finished------" << std::endl;
 }
 
-void NeuralNetwork::test(const std::vector<Mat2D<uint8_t>>& aImages, const std::vector<size_t>& aLabels) {
+void NeuralNetwork::test(const std::vector<Mat2D<double>>& aImages, const std::vector<size_t>& aLabels) {
     if (aImages.size() != aLabels.size()) {
         std::string errorMessage = "Neural Network test failed: Number of input images and labels must match\n";
         errorMessage += std::string("Number of images: ") + std::to_string(aImages.size()) + "\n";
         errorMessage += "Number of labels: " + std::to_string(aLabels.size()) + "\n";
         throw std::invalid_argument(errorMessage);
     }
-    (void)aImages;
-    (void)aLabels;
+
+    size_t correctIterations = 0;
+    for (size_t iteration = 0; iteration < aImages.size(); ++iteration) {
+        std::cout << "------Testing Iteration " << std::to_string(iteration + 1) << "------" << std::endl;
+        // Run current image through the network
+        std::vector<double> output = forward(aImages[iteration].toVec());
+        
+        // Compare network output with expected label
+        size_t index = std::distance(output.begin(), std::max_element(output.begin(), output.end())) + 1;
+        correctIterations += (index == aLabels[iteration]);
+    }
+    
+    // Testing finished. Print output
+    std::cout << "----Testing Finished----" << std::endl;
+    std::cout << "Accuracy: " << std::to_string(correctIterations) << "/" << std::to_string(aImages.size()) << " -> ";
+    std::cout << std::to_string(static_cast<double>(correctIterations) / aImages.size() * 100.0) << std::endl;
+    
 }
 
 void NeuralNetwork::setEpochs(size_t aEpochs) {
@@ -115,7 +131,7 @@ void NeuralNetwork::setLearningRate(double aLearningRate) {
     mLearningRate = aLearningRate;
 }
 
-void NeuralNetwork::setTrainingData(const std::vector<Mat2D<uint8_t>>& aTrainingData) {
+void NeuralNetwork::setTrainingData(const std::vector<Mat2D<double>>& aTrainingData) {
     mTrainingData = aTrainingData;
 }
 
@@ -134,29 +150,13 @@ void NeuralNetwork::setActivationFunction(size_t ind, ActivationFunction aFuncti
     mActivationFunctions[ind] = aFunction;    
 }
 
-std::vector<double> NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
-	std::cout << "\nForward pass\n" << std::endl;
-    
-    // TODO: Probably want to do this while reading the file.
-    const auto normalize = [](std::vector<double>& aVec) {
-        for (double& element : aVec) {
-            element /= 255.0;
-        }
-    };
-    
+std::vector<double> NeuralNetwork::forward(const std::vector<double>& aInput) {
     // The first layer outputs the image input data 
     mLayerOutputs[0] = std::vector<double>(aInput.begin(), aInput.end());
     mLayerOutputsTransformed[0] = std::vector<double>(aInput.begin(), aInput.end());
 
-    normalize(mLayerOutputs[0]);
-    normalize(mLayerOutputsTransformed[0]);
-
     // Propagate input through each layer in the network, applying weights between each layer
 	for (size_t weightsIdx = 0; weightsIdx < mWeights.size(); ++weightsIdx) {
-        std::cout << "---Forward Progress " << weightsIdx + 1 << "/" << mWeights.size() << "---" << std::endl;
-        std::cout << "Input Vector size: " << mLayerOutputs[weightsIdx].size() << std::endl;
-        std::cout << "Weights Matrix size: " << mWeights[weightsIdx].size() << std::endl << std::endl;
-        
         std::vector<double>& currOutput = mLayerOutputsTransformed[weightsIdx + 1]; 
 
         // Multiply weights matrix with output from previous layer
@@ -179,14 +179,10 @@ std::vector<double> NeuralNetwork::forward(const std::vector<uint8_t>& aInput) {
 }
 
 void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
-	std::cout << "\nBackward pass" << std::endl;
-   
     std::vector<double> delta; 
     std::vector<uint8_t> expected(10, 0);
     expected[aCorrectDigit] = 1;
     for (size_t idx = 0; idx <= mWeights.size(); ++idx) {
-        std::cout << "---Backward Progress " << idx + 1 << "/" <<  mWeights.size() + 1 << "---" << std::endl;
-        std::cout << activationFunctionName(mActivationFunctions.size() - idx - 1) << std::endl;
         if (idx == 0) {
             delta = Util::Subtract(mLayerOutputsTransformed.back(), expected);
         }
@@ -290,7 +286,7 @@ void NeuralNetwork::randomizeMatrix(Mat2D<double>& aMat) {
 
 std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork) {
     aOut << "------Neural Network parameters------" << std::endl;
-    aOut << "Size: " << aNeuralNetwork.size() << std::endl;
+    aOut << "Number of Layers: " << aNeuralNetwork.size() << std::endl;
     aOut << "Epochs: " << aNeuralNetwork.mEpochs << std::endl;
     aOut << "Learning Rate: " << aNeuralNetwork.mLearningRate << std::endl << std::endl;
     for (size_t i = 0; i < aNeuralNetwork.size(); ++i) {

@@ -9,11 +9,11 @@
 int main() { 
     const std::string trainingDataFilePath = "trunk/train-images-idx3-ubyte";
     const std::string trainingLabelsFilePath = "trunk/train-labels-idx1-ubyte";
-    const std::string testingImagesFilePath = "trunk/t10k-iamges-idx3-ubyte";
-    const std::string testingLabelsFilepath = "trunk/t10k-labels-idx1-ubyte";
+    const std::string testingImagesFilePath = "trunk/t10k-images-idx3-ubyte";
+    const std::string testingLabelsFilePath = "trunk/t10k-labels-idx1-ubyte";
 
 	// Reading training data 
-    std::vector<Mat2D<uint8_t>> trainingImages = readImageData(trainingDataFilePath); 
+    std::vector<Mat2D<double>> trainingImages = readImageData(trainingDataFilePath); 
     std::vector<size_t> trainingLabels = readImageLabels(trainingLabelsFilePath);
     
     const uint32_t imageVectorSize = trainingImages[0].width() * trainingImages[0].height();
@@ -26,19 +26,19 @@ int main() {
 
     std::cout << "Training Data: " << std::endl; 
     std::cout << "Number of Images: " << layeredNetwork.trainingDataSize() << std::endl;    
-    std::cout << "Number of Labels: " << layeredNetwork.trainingLabelsSize() << std::endl;
+    std::cout << "Number of Labels: " << layeredNetwork.trainingLabelsSize() << std::endl << std::endl;
 
     std::cout << layeredNetwork << std::endl;
 
 	// Training	
-    size_t iterations = 1;
+    size_t iterations = 2000;
 	layeredNetwork.train(iterations);
 
     // Read testing data
-    //std::vector<Mat2D<uint8_t>> testingImages = readImageData(testingImagesFilePath);
-    //std::vector<size_t> testingLabels = readImageLabels(trainingLabelsFilePath);
+    std::vector<Mat2D<double>> testingImages = readImageData(testingImagesFilePath);
+    std::vector<size_t> testingLabels = readImageLabels(testingLabelsFilePath);
 
     // Testing
-    //layeredNetwork.test(testingImages, testingLabels);
+    layeredNetwork.test(testingImages, testingLabels);
     return 0;    
 }

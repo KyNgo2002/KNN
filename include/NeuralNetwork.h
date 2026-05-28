@@ -29,13 +29,13 @@ public:
 	void train();
     void train(size_t numIterations);
 
-    void test(const std::vector<Mat2D<uint8_t>>& aImages, const std::vector<size_t>& aLabels);
+    void test(const std::vector<Mat2D<double>>& aImages, const std::vector<size_t>& aLabels);
 
     void setEpochs(size_t aEpochs);
 
     void setLearningRate(double aLearningRate);
  
-    void setTrainingData(const std::vector<Mat2D<uint8_t>>& aTrainingData);
+    void setTrainingData(const std::vector<Mat2D<double>>& aTrainingData);
     void setTrainingLabels(const std::vector<size_t>& aTrainingLabels);
 
     void setActivationFunction(size_t ind, ActivationFunction aFunction);
@@ -43,7 +43,7 @@ public:
     friend std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork);
 
 private:
-    std::vector<double> forward(const std::vector<uint8_t>& aInput);
+    std::vector<double> forward(const std::vector<double>& aInput);
     void backpropagation(size_t aCorrectDigit);
 
     static ActFunc getActivationFunction(ActivationFunction aActivationFunction);
@@ -63,7 +63,7 @@ private:
     size_t mEpochs;
     double mLearningRate; 
  
-    std::vector<Mat2D<uint8_t>> mTrainingData;
+    std::vector<Mat2D<double>> mTrainingData;
     std::vector<size_t> mTrainingLabels;
 
     // Layer outputs without activation function applied.
