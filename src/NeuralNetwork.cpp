@@ -152,8 +152,7 @@ void NeuralNetwork::setActivationFunction(size_t ind, ActivationFunction aFuncti
 
 std::vector<double> NeuralNetwork::forward(const std::vector<double>& aInput) {
     // The first layer outputs the image input data 
-    mLayerOutputs[0] = std::vector<double>(aInput.begin(), aInput.end());
-    mLayerOutputsTransformed[0] = std::vector<double>(aInput.begin(), aInput.end());
+    mLayerOutputs[0] = mLayerOutputsTransformed[0] = aInput;
 
     // Propagate input through each layer in the network, applying weights between each layer
 	for (size_t weightsIdx = 0; weightsIdx < mWeights.size(); ++weightsIdx) {
@@ -175,13 +174,13 @@ std::vector<double> NeuralNetwork::forward(const std::vector<double>& aInput) {
             }
         }
 	}
-    return Softmax(mLayerOutputsTransformed.back()); 
+    return mLayerOutputsTransformed[mLayerOutputsTransformed.size() - 1] = Softmax(mLayerOutputsTransformed.back()); 
 }
 
 void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
     std::vector<double> delta; 
-    std::vector<uint8_t> expected(10, 0);
-    expected[aCorrectDigit] = 1;
+    std::vector<double> expected(10, 1.0);
+    expected[aCorrectDigit] = 1.0;
     for (size_t idx = 0; idx <= mWeights.size(); ++idx) {
         if (idx == 0) {
             delta = Util::Subtract(mLayerOutputsTransformed.back(), expected);

@@ -31,14 +31,14 @@ int main() {
     std::cout << layeredNetwork << std::endl;
 
 	// Training	
-    size_t iterations = 2000;
+    size_t iterations = 1;
 	layeredNetwork.train(iterations);
 
     // Read testing data
-    std::vector<Mat2D<double>> testingImages = readImageData(testingImagesFilePath);
-    std::vector<size_t> testingLabels = readImageLabels(testingLabelsFilePath);
+    //std::vector<Mat2D<double>> testingImages = readImageData(testingImagesFilePath);
+    //std::vector<size_t> testingLabels = readImageLabels(testingLabelsFilePath);
 
     // Testing
-    layeredNetwork.test(testingImages, testingLabels);
+    //layeredNetwork.test(testingImages, testingLabels);
     return 0;    
 }
