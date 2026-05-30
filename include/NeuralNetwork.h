@@ -40,6 +40,8 @@ public:
 
     void setActivationFunction(size_t ind, ActivationFunction aFunction);
 
+    static void Softmax(std::vector<double>& aInput);
+
     friend std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork);
 
 private:
@@ -53,8 +55,6 @@ private:
 	static double Sigmoid(double aInput, bool aDerivative = false);
 	static double ReLu(double aInput, bool aDerivative = false);
    
-    static std::vector<double> Softmax(const std::vector<double>& aInput);
-
     void randomizeMatrix(Mat2D<double>& aMat);
 
     std::mt19937 mGenerator;

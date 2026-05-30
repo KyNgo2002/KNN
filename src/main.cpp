@@ -5,6 +5,7 @@
 #include "../include/Mat2D.h"
 #include "../include/NeuralNetwork.h"
 #include "../include/Reader.h"
+#include "../include/Util.h"
 
 int main() { 
     const std::string trainingDataFilePath = "trunk/train-images-idx3-ubyte";
@@ -31,14 +32,14 @@ int main() {
     std::cout << layeredNetwork << std::endl;
 
 	// Training	
-    size_t iterations = 1;
+    size_t iterations = 1000;
 	layeredNetwork.train(iterations);
 
     // Read testing data
-    //std::vector<Mat2D<double>> testingImages = readImageData(testingImagesFilePath);
-    //std::vector<size_t> testingLabels = readImageLabels(testingLabelsFilePath);
+    std::vector<Mat2D<double>> testingImages = readImageData(testingImagesFilePath);
+    std::vector<size_t> testingLabels = readImageLabels(testingLabelsFilePath);
 
     // Testing
-    //layeredNetwork.test(testingImages, testingLabels);
+    layeredNetwork.test(testingImages, testingLabels);
     return 0;    
 }

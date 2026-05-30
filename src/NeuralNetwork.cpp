@@ -7,7 +7,7 @@
 
 // Constructors
 NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers) 
-    : mGenerator{std::random_device()()}, mDist{-1.0, 1.0}, mEpochs{1}, mLearningRate{0.1} {
+    : mGenerator{std::random_device()()}, mDist{-1.0, 1.0}, mEpochs{1}, mLearningRate{0.01} {
     if (aLayers.size() < 2) {
         throw std::invalid_argument("NeuralNetwork must be initialized with at least 2 layers");
     }
@@ -116,7 +116,7 @@ void NeuralNetwork::test(const std::vector<Mat2D<double>>& aImages, const std::v
     // Testing finished. Print output
     std::cout << "----Testing Finished----" << std::endl;
     std::cout << "Accuracy: " << std::to_string(correctIterations) << "/" << std::to_string(aImages.size()) << " -> ";
-    std::cout << std::to_string(static_cast<double>(correctIterations) / aImages.size() * 100.0) << std::endl;
+    std::cout << std::setprecision(2) << std::to_string(static_cast<double>(correctIterations) / aImages.size() * 100.0) << std::endl;
     
 }
 
@@ -156,30 +156,31 @@ std::vector<double> NeuralNetwork::forward(const std::vector<double>& aInput) {
 
     // Propagate input through each layer in the network, applying weights between each layer
 	for (size_t weightsIdx = 0; weightsIdx < mWeights.size(); ++weightsIdx) {
-        std::vector<double>& currOutput = mLayerOutputsTransformed[weightsIdx + 1]; 
+        std::vector<double>& currOutput = mLayerOutputs[weightsIdx + 1]; 
 
         // Multiply weights matrix with output from previous layer
 		currOutput = mWeights[weightsIdx].multiply(mLayerOutputsTransformed[weightsIdx]);
 
-        // Save current output as untransformed layer output
-        mLayerOutputs[weightsIdx + 1] = currOutput;
+        // Save untransformed output to transformed vector to be transformed
+        mLayerOutputsTransformed[weightsIdx + 1] = currOutput;
 
         // Retrieve Activation Function for current layer
-        const auto activationFunction = getActivationFunction(mActivationFunctions[weightsIdx]);
+        //const auto activationFunction = getActivationFunction(mActivationFunctions[weightsIdx]);
 
-        // Apply activation function to each output in the current layer.
-        for (double& element : currOutput) {
-            if (activationFunction) {
-                element = activationFunction(element, false);
+        // Apply activation function to each output in the current layer, except the last layer
+        if (weightsIdx < mWeights.size() - 1) {
+            for (double& element : mLayerOutputsTransformed[weightsIdx + 1]) {
+                element = Sigmoid(element, false);
             }
         }
 	}
-    return mLayerOutputsTransformed[mLayerOutputsTransformed.size() - 1] = Softmax(mLayerOutputsTransformed.back()); 
+    Softmax(mLayerOutputsTransformed.back());
+    return mLayerOutputsTransformed.back(); 
 }
 
 void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
     std::vector<double> delta; 
-    std::vector<double> expected(10, 1.0);
+    std::vector<double> expected(10, 0.0);
     expected[aCorrectDigit] = 1.0;
     for (size_t idx = 0; idx <= mWeights.size(); ++idx) {
         if (idx == 0) {
@@ -242,7 +243,7 @@ std::vector<double> NeuralNetwork::costFunction(const std::vector<double>& aInpu
 double NeuralNetwork::Sigmoid(double aInput, bool aDerivative) {
     aInput = std::clamp(aInput, -50.0, 50.0);
     if (aDerivative) {
-        return std::exp(-aInput) / std::pow(1 + std::exp(-aInput), 2);
+        return std::exp(-aInput) / std::pow(1.0 + std::exp(-aInput), 2);
     }
 	return 1.0 / (1.0 + std::exp(-aInput));
 }
@@ -254,25 +255,21 @@ double NeuralNetwork::ReLu(double aInput, bool aDerivative) {
 	return std::max(0.0, aInput);
 }
 
-std::vector<double> NeuralNetwork::Softmax(const std::vector<double>& aInput) {
-    std::vector<double> output(aInput.size());
-
+void NeuralNetwork::Softmax(std::vector<double>& aInput) {
     double maxElement = *max_element(aInput.begin(), aInput.end());
     double sum = 0;
     
     // Calculate exponentiated of input vector.
     for (size_t i = 0; i < aInput.size(); ++i) {
-        output[i] = std::exp(aInput[i] - maxElement);
-        sum += output[i]; 
+        aInput[i] = std::exp(aInput[i] - maxElement);
+        sum += aInput[i]; 
     }
 
     // Divide individual exponentiated values by exponentiated sum to bind
     // sum of output to 1.
-    std::for_each(output.begin(), output.end(), [sum](double& element) {
+    std::for_each(aInput.begin(), aInput.end(), [sum](double& element) {
         element /= sum;
     });
-
-    return output;
 }
 
 void NeuralNetwork::randomizeMatrix(Mat2D<double>& aMat) {
