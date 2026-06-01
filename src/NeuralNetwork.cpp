@@ -107,7 +107,9 @@ void NeuralNetwork::test(const std::vector<Mat2D<double>>& aImages, const std::v
         std::cout << "------Testing Iteration " << std::to_string(iteration + 1) << "------" << std::endl;
         // Run current image through the network
         std::vector<double> output = forward(aImages[iteration].toVec());
-        
+       
+        std::cout << "Loss: " << costFunction(output, aLabels[iteration]) << std::endl;
+
         // Compare network output with expected label
         size_t index = std::distance(output.begin(), std::max_element(output.begin(), output.end())) + 1;
         correctIterations += (index == aLabels[iteration]);
@@ -179,30 +181,28 @@ std::vector<double> NeuralNetwork::forward(const std::vector<double>& aInput) {
 }
 
 void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
-    std::vector<double> delta; 
     std::vector<double> expected(10, 0.0);
     expected[aCorrectDigit] = 1.0;
-    for (size_t idx = 0; idx <= mWeights.size(); ++idx) {
-        if (idx == 0) {
-            delta = Util::Subtract(mLayerOutputsTransformed.back(), expected);
-        }
-        else {
-            delta = mWeights[mWeights.size() - idx].transpose().multiply(delta);
-            
-            auto currLayerOutput = mLayerOutputs[mLayerOutputs.size() - idx - 1];
-            auto currLayerOutputTransformed = mLayerOutputsTransformed[mLayerOutputsTransformed.size() - idx - 1];
-            const auto activationFunction = getActivationFunction(mActivationFunctions[mActivationFunctions.size() - idx - 1]);
+    std::vector<double> delta = Util::Subtract(mLayerOutputsTransformed.back(), expected); 
+    for (int idx = mWeights.size() - 1; idx >= 0; --idx) {
+        Mat2D<double> gradient = Util::VecToMatrix(delta, mLayerOutputsTransformed[idx]);
+
+        auto oldWeights = mWeights[idx];
+
+        // Gradient descent weight updates
+        mWeights[idx] = mWeights[idx] - gradient.scalar(mLearningRate);
+
+        if (idx > 0) {
+            delta = oldWeights.transpose().multiply(delta);
+            auto currLayerOutputsTransformed = mLayerOutputsTransformed[idx];
+
+            const auto activationFunction = getActivationFunction(mActivationFunctions[idx]);
             if (activationFunction) {
-                for (double& element : currLayerOutput) {
+                for (double& element : currLayerOutputsTransformed) {
                     element = activationFunction(element, true); 
                 }
             }
-            delta = Util::multiply(delta, currLayerOutput);
-
-            Mat2D<double> deltaW = Util::VecToMatrix(mLayerOutputsTransformed[mLayerOutputsTransformed.size() - idx], delta);
-
-            // Gradient descent weight updates
-            mWeights[mWeights.size() - idx] = mWeights[mWeights.size() - idx] - deltaW.scalar(mLearningRate);
+            delta = Util::multiply(delta, currLayerOutputsTransformed);
         }
     } 
 }
@@ -221,29 +221,23 @@ NeuralNetwork::ActFunc NeuralNetwork::getActivationFunction(ActivationFunction a
     return nullptr;
 }
 
-std::vector<double> NeuralNetwork::costFunction(const std::vector<double>& aInput, size_t aCorrectDigit) {
+double NeuralNetwork::costFunction(const std::vector<double>& aInput, size_t aCorrectDigit) {
     if (aInput.size() != 10) {
         throw std::logic_error("Cost Function error: Input vector should be size 10");
     }
     if (aCorrectDigit >= 10) {
         throw std::logic_error("Cost Function error: Correct expected digit should be less than 10");
     }
-    std::vector<double> output(aInput.size());
-    for (size_t i = 0; i < aInput.size(); ++i) {
-        if (i == aCorrectDigit) {
-            output[i] = -std::log(aInput[i]);
-        }
-        else {
-            output[i] = -std::log(1 - aInput[i]);
-        }
-    }
-    return output;
+    constexpr double eps = 1e-15;
+    return -std::log(aInput[aCorrectDigit] + eps);
 }
 
 double NeuralNetwork::Sigmoid(double aInput, bool aDerivative) {
     aInput = std::clamp(aInput, -50.0, 50.0);
     if (aDerivative) {
-        return std::exp(-aInput) / std::pow(1.0 + std::exp(-aInput), 2);
+        // Sigmoid allows for a simple trick here, assuming aInput is the
+        // activation values.
+        return aInput * (1.0 - aInput);
     }
 	return 1.0 / (1.0 + std::exp(-aInput));
 }

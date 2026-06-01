@@ -50,7 +50,7 @@ private:
 
     static ActFunc getActivationFunction(ActivationFunction aActivationFunction);
     
-    static std::vector<double> costFunction(const std::vector<double>& aInput, size_t aCorrectDigit);
+    static double costFunction(const std::vector<double>& aInput, size_t aCorrectDigit);
 
 	static double Sigmoid(double aInput, bool aDerivative = false);
 	static double ReLu(double aInput, bool aDerivative = false);

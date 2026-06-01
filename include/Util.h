@@ -31,7 +31,7 @@ std::vector<T> multiply(const std::vector<T>& aFirst, const std::vector<T>& aSec
 }
 
 template <typename T>
-Mat2D<T> VecToMatrix(const std::vector<T>& aFirst, const std::vector<T> aSecond) {
+Mat2D<T> VecToMatrix(const std::vector<T>& aFirst, const std::vector<T>& aSecond) {
     Mat2D<T> output(aFirst.size(), aSecond.size());
     for (size_t i = 0; i < aFirst.size(); ++i) {
         for (size_t j = 0; j < aSecond.size(); ++j) {
