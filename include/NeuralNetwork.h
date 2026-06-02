@@ -14,7 +14,6 @@ public:
 
     enum class ActivationFunction {
         Sigmoid,        
-		ReLu,
         None,
     };
 
@@ -53,7 +52,6 @@ private:
     static double costFunction(const std::vector<double>& aInput, size_t aCorrectDigit);
 
 	static double Sigmoid(double aInput, bool aDerivative = false);
-	static double ReLu(double aInput, bool aDerivative = false);
    
     void randomizeMatrix(Mat2D<double>& aMat);
 
@@ -71,6 +69,7 @@ private:
     // Layer outputs with activation function applied.
     std::vector<std::vector<double>> mLayerOutputsTransformed;
     std::vector<Mat2D<double>> mWeights;
+    std::vector<std::vector<double>> mBiases;
     std::vector<ActivationFunction> mActivationFunctions;
 };
 

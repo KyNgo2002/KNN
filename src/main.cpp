@@ -17,6 +17,9 @@ int main() {
     std::vector<Mat2D<double>> trainingImages = readImageData(trainingDataFilePath); 
     std::vector<size_t> trainingLabels = readImageLabels(trainingLabelsFilePath);
     
+    std::vector<Mat2D<double>> firstImage(trainingImages.size(), trainingImages[0]);
+    std::vector<size_t> firstLabel(trainingLabels.size(), trainingLabels[0]);
+
     const uint32_t imageVectorSize = trainingImages[0].width() * trainingImages[0].height();
 
     std::vector<size_t> layers = {imageVectorSize, 392, 196, 98, 44, 22, 10};
@@ -24,6 +27,9 @@ int main() {
 
     layeredNetwork.setTrainingData(trainingImages);
     layeredNetwork.setTrainingLabels(trainingLabels);
+
+    //layeredNetwork.setTrainingData(firstImage);
+    //layeredNetwork.setTrainingLabels(firstLabel);
 
     std::cout << "Training Data: " << std::endl; 
     std::cout << "Number of Images: " << layeredNetwork.trainingDataSize() << std::endl;    
@@ -39,7 +45,11 @@ int main() {
     std::vector<Mat2D<double>> testingImages = readImageData(testingImagesFilePath);
     std::vector<size_t> testingLabels = readImageLabels(testingLabelsFilePath);
 
+    std::vector<Mat2D<double>> testingImagesFirst(testingImages.size(), firstImage[0]);
+    std::vector<size_t> testingLabelsFirst(testingLabels.size(), firstLabel[0]);
+
     // Testing
     layeredNetwork.test(testingImages, testingLabels);
+
     return 0;    
 }

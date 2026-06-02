@@ -7,10 +7,14 @@
 
 // Constructors
 NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers) 
-    : mGenerator{std::random_device()()}, mDist{-1.0, 1.0}, mEpochs{1}, mLearningRate{0.01} {
+    : mGenerator{std::random_device()()}, mEpochs{1}, mLearningRate{0.01} {
     if (aLayers.size() < 2) {
         throw std::invalid_argument("NeuralNetwork must be initialized with at least 2 layers");
     }
+
+    // Initialize probability distribution
+    double boundary = std::sqrt(6.0 / (aLayers.front() + aLayers.back()));
+    mDist = std::uniform_real_distribution(-boundary, boundary);
 
     mLayerOutputs.reserve(aLayers.size());
     mLayerOutputsTransformed.reserve(aLayers.size());
@@ -19,16 +23,18 @@ NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers)
             throw std::invalid_argument("Layer size must be at least 1");
         }
         mLayerOutputs.emplace_back(layerSize); 
-        mLayerOutputsTransformed.emplace_back(layerSize); 
+        mLayerOutputsTransformed.emplace_back(layerSize);
     }
 
     // Weights matrices are M x N
     //  - M: Size of next size of the next layer in the matrix
     //  - N: Size of the previous layer in the matrix
     mWeights.reserve(aLayers.size() - 1);
+    mBiases.reserve(aLayers.size() - 1);
     for (size_t i = 1; i < aLayers.size(); ++i) {
         mWeights.emplace_back(Mat2D<double>(aLayers[i], aLayers[i - 1], 1.0));
         randomizeMatrix(mWeights.back());
+        mBiases.emplace_back(aLayers[i], 0.0);
     }
     
     mActivationFunctions.resize(aLayers.size(), ActivationFunction::Sigmoid);
@@ -59,8 +65,6 @@ std::string NeuralNetwork::activationFunctionName(size_t ind) const {
             return "None";
         case ActivationFunction::Sigmoid:
             return "Sigmoid";
-		case ActivationFunction::ReLu:
-			return "ReLu";
         default:
             throw std::invalid_argument("Unrecognized Activation Function");
     }
@@ -85,6 +89,7 @@ void NeuralNetwork::train(size_t numIterations) {
 		std::cout << "\n------Training Iteration #" << imageIdx + 1 << "------" << std::endl;
 		// Forward pass
         std::vector<double> output = forward(mTrainingData[imageIdx].toVec());
+        std::cout << costFunction(output, mTrainingLabels[imageIdx]) << std::endl;
 
 		// Backpropagation
         backpropagation(mTrainingLabels[imageIdx]); 
@@ -107,11 +112,11 @@ void NeuralNetwork::test(const std::vector<Mat2D<double>>& aImages, const std::v
         std::cout << "------Testing Iteration " << std::to_string(iteration + 1) << "------" << std::endl;
         // Run current image through the network
         std::vector<double> output = forward(aImages[iteration].toVec());
-       
-        std::cout << "Loss: " << costFunction(output, aLabels[iteration]) << std::endl;
-
+        Util::Print(output);
         // Compare network output with expected label
-        size_t index = std::distance(output.begin(), std::max_element(output.begin(), output.end())) + 1;
+        size_t index = std::distance(output.begin(), std::max_element(output.begin(), output.end())) ;
+        std::cout << "Network output: " << index << std::endl;
+        std::cout << "Expected output: " << aLabels[iteration] << std::endl;
         correctIterations += (index == aLabels[iteration]);
     }
     
@@ -119,7 +124,6 @@ void NeuralNetwork::test(const std::vector<Mat2D<double>>& aImages, const std::v
     std::cout << "----Testing Finished----" << std::endl;
     std::cout << "Accuracy: " << std::to_string(correctIterations) << "/" << std::to_string(aImages.size()) << " -> ";
     std::cout << std::setprecision(2) << std::to_string(static_cast<double>(correctIterations) / aImages.size() * 100.0) << std::endl;
-    
 }
 
 void NeuralNetwork::setEpochs(size_t aEpochs) {
@@ -162,12 +166,14 @@ std::vector<double> NeuralNetwork::forward(const std::vector<double>& aInput) {
 
         // Multiply weights matrix with output from previous layer
 		currOutput = mWeights[weightsIdx].multiply(mLayerOutputsTransformed[weightsIdx]);
+        
+        // Add biases
+        for (size_t i = 0; i < currOutput.size(); ++i) {
+            currOutput[i] += mBiases[weightsIdx][i];
+        }
 
         // Save untransformed output to transformed vector to be transformed
         mLayerOutputsTransformed[weightsIdx + 1] = currOutput;
-
-        // Retrieve Activation Function for current layer
-        //const auto activationFunction = getActivationFunction(mActivationFunctions[weightsIdx]);
 
         // Apply activation function to each output in the current layer, except the last layer
         if (weightsIdx < mWeights.size() - 1) {
@@ -192,9 +198,14 @@ void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
         // Gradient descent weight updates
         mWeights[idx] = mWeights[idx] - gradient.scalar(mLearningRate);
 
+        // Bias updates
+        for (size_t i = 0; i < delta.size(); ++i) {
+            mBiases[idx][i] -= mLearningRate * delta[i];
+        }
+
         if (idx > 0) {
             delta = oldWeights.transpose().multiply(delta);
-            auto currLayerOutputsTransformed = mLayerOutputsTransformed[idx];
+            auto& currLayerOutputsTransformed = mLayerOutputsTransformed[idx];
 
             const auto activationFunction = getActivationFunction(mActivationFunctions[idx]);
             if (activationFunction) {
@@ -205,6 +216,7 @@ void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
             delta = Util::multiply(delta, currLayerOutputsTransformed);
         }
     } 
+    std::cout << mBiases[0][0] << std::endl;
 }
 
 NeuralNetwork::ActFunc NeuralNetwork::getActivationFunction(ActivationFunction aActivationFunction) {
@@ -213,8 +225,6 @@ NeuralNetwork::ActFunc NeuralNetwork::getActivationFunction(ActivationFunction a
             return nullptr;
         case ActivationFunction::Sigmoid:
             return Sigmoid;
-        case ActivationFunction::ReLu:
-            return ReLu;
         default:
             std::cerr << "Chosen activation function does not have a corresponding implementation" << std::endl;
     }
@@ -240,13 +250,6 @@ double NeuralNetwork::Sigmoid(double aInput, bool aDerivative) {
         return aInput * (1.0 - aInput);
     }
 	return 1.0 / (1.0 + std::exp(-aInput));
-}
-
-double NeuralNetwork::ReLu(double aInput, bool aDerivative) {
-    if (aDerivative) {
-        return aInput;
-    }
-	return std::max(0.0, aInput);
 }
 
 void NeuralNetwork::Softmax(std::vector<double>& aInput) {
