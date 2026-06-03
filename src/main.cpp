@@ -38,7 +38,7 @@ int main() {
     std::cout << layeredNetwork << std::endl;
 
 	// Training	
-    size_t iterations = 1000;
+    size_t iterations = 1;
 	layeredNetwork.train(iterations);
 
     // Read testing data
@@ -48,8 +48,10 @@ int main() {
     std::vector<Mat2D<double>> testingImagesFirst(testingImages.size(), firstImage[0]);
     std::vector<size_t> testingLabelsFirst(testingLabels.size(), firstLabel[0]);
 
+    size_t testingIterations = testingImages.size();
+
     // Testing
-    layeredNetwork.test(testingImages, testingLabels);
+    //layeredNetwork.test(testingImages, testingLabels, testingIterations);
 
     return 0;    
 }

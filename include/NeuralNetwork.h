@@ -14,6 +14,7 @@ public:
 
     enum class ActivationFunction {
         Sigmoid,        
+        ReLu,
         None,
     };
 
@@ -28,7 +29,7 @@ public:
 	void train();
     void train(size_t numIterations);
 
-    void test(const std::vector<Mat2D<double>>& aImages, const std::vector<size_t>& aLabels);
+    void test(const std::vector<Mat2D<double>>& aImages, const std::vector<size_t>& aLabels, size_t aIterations);
 
     void setEpochs(size_t aEpochs);
 
@@ -52,11 +53,12 @@ private:
     static double costFunction(const std::vector<double>& aInput, size_t aCorrectDigit);
 
 	static double Sigmoid(double aInput, bool aDerivative = false);
+    static double ReLu(double aInput, bool aDerivative);
    
     void randomizeMatrix(Mat2D<double>& aMat);
 
     std::mt19937 mGenerator;
-    std::uniform_real_distribution<double> mDist;
+    std::normal_distribution<double> mDist;
 
     size_t mEpochs;
     double mLearningRate; 

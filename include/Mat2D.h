@@ -64,7 +64,7 @@ template <Numeric T>
 Mat2D<T>& Mat2D<T>::operator=(const Mat2D<T>& aOther) {
     mHeight = aOther.mHeight;
     mWidth = aOther.mWidth;
-    mData.resize(mHeight, std::vector<T>(mWidth));
+    mData.assign(mHeight, std::vector<T>(mWidth));
     for (size_t i = 0; i < mHeight; ++i) {
         for (size_t j = 0; j < mWidth; ++j) {
             mData[i][j] = aOther[i][j];

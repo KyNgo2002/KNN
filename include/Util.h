@@ -53,7 +53,7 @@ template <typename T>
 void Print(const std::vector<T>& aVec) {
     std::cout << "[ ";
     for (size_t ind = 0; ind < aVec.size(); ++ind) {
-        std::cout << static_cast<double>(aVec[ind]) << " ";
+        std::cout << std::setprecision(10) << static_cast<double>(aVec[ind]) << " ";
     }
     std::cout << "]" << std::endl;
 }
