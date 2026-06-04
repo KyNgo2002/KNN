@@ -89,14 +89,9 @@ void NeuralNetwork::train(size_t numIterations) {
 		std::cout << "\n------Training Iteration #" << imageIdx + 1 << "------" << std::endl;
 		// Forward pass
         std::vector<double> output = forward(mTrainingData[imageIdx].toVec());
-        std::cout << costFunction(output, mTrainingLabels[imageIdx]) << std::endl;
 
 		// Backpropagation
-        double before = mWeights[0][0][0];
         backpropagation(mTrainingLabels[imageIdx]); 
-        double after = mWeights[0][0][0];
-        std::cout << "Before: " << before << std::endl;
-        std::cout << "After: " << after << std::endl;
 	}	
     
     // Training finished
@@ -116,11 +111,8 @@ void NeuralNetwork::test(const std::vector<Mat2D<double>>& aImages, const std::v
         std::cout << "------Testing Iteration " << std::to_string(iteration + 1) << "------" << std::endl;
         // Run current image through the network
         std::vector<double> output = forward(aImages[iteration].toVec());
-        Util::Print(output);
         // Compare network output with expected label
         size_t index = std::distance(output.begin(), std::max_element(output.begin(), output.end())) ;
-        std::cout << "Network output: " << index << std::endl;
-        std::cout << "Expected output: " << aLabels[iteration] << std::endl;
         correctIterations += (index == aLabels[iteration]);
     }
     
@@ -187,7 +179,6 @@ std::vector<double> NeuralNetwork::forward(const std::vector<double>& aInput) {
         }
 	}
     Softmax(mLayerOutputsTransformed.back());
-    Util::Print(mLayerOutputsTransformed.back());
     return mLayerOutputsTransformed.back(); 
 }
 
@@ -198,16 +189,7 @@ void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
     for (int idx = mWeights.size() - 1; idx >= 0; --idx) {
         Mat2D<double> gradient = Util::VecToMatrix(delta, mLayerOutputsTransformed[idx]);
         auto oldWeights = mWeights[idx];
-        auto test = gradient.scalar(mLearningRate); 
-        // Gradient descent weight updates
         mWeights[idx] = mWeights[idx] - gradient.scalar(mLearningRate);
-        if (idx > 3) {
-            std::cout << "Old weights\n" << oldWeights << std::endl;
-            std::cout << "Gradient\n" << gradient << std::endl;
-            std::cout << "Test\n" << test << std::endl;
-            std::cout << "New weights\n" << mWeights[idx] << std::endl;
-        }
-        // Bias updates
         for (size_t i = 0; i < delta.size(); ++i) {
             mBiases[idx][i] -= mLearningRate * delta[i];
         }

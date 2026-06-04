@@ -28,9 +28,6 @@ int main() {
     layeredNetwork.setTrainingData(trainingImages);
     layeredNetwork.setTrainingLabels(trainingLabels);
 
-    //layeredNetwork.setTrainingData(firstImage);
-    //layeredNetwork.setTrainingLabels(firstLabel);
-
     std::cout << "Training Data: " << std::endl; 
     std::cout << "Number of Images: " << layeredNetwork.trainingDataSize() << std::endl;    
     std::cout << "Number of Labels: " << layeredNetwork.trainingLabelsSize() << std::endl << std::endl;
@@ -38,20 +35,17 @@ int main() {
     std::cout << layeredNetwork << std::endl;
 
 	// Training	
-    size_t iterations = 1;
+    size_t iterations = trainingImages.size();
 	layeredNetwork.train(iterations);
 
     // Read testing data
     std::vector<Mat2D<double>> testingImages = readImageData(testingImagesFilePath);
     std::vector<size_t> testingLabels = readImageLabels(testingLabelsFilePath);
 
-    std::vector<Mat2D<double>> testingImagesFirst(testingImages.size(), firstImage[0]);
-    std::vector<size_t> testingLabelsFirst(testingLabels.size(), firstLabel[0]);
-
     size_t testingIterations = testingImages.size();
 
     // Testing
-    //layeredNetwork.test(testingImages, testingLabels, testingIterations);
+    layeredNetwork.test(testingImages, testingLabels, testingIterations);
 
     return 0;    
 }
