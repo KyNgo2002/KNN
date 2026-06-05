@@ -20,16 +20,20 @@ public:
 
     NeuralNetwork() = default;
     NeuralNetwork(std::vector<size_t>& aLayers);
+    NeuralNetwork(const std::string& aModelFilePath);
 
     size_t size() const;
     size_t trainingDataSize() const;
     size_t trainingLabelsSize() const;
-    std::string activationFunctionName(size_t ind) const;
+    std::string getActivationFunctionName(size_t ind) const;
 
 	void train();
     void train(size_t numIterations);
 
-    void test(const std::vector<Mat2D<double>>& aImages, const std::vector<size_t>& aLabels, size_t aIterations);
+    void test();
+    void test(size_t aIterations);
+
+    void writeModel(const std::string& aModelFilePath);
 
     void setEpochs(size_t aEpochs);
 
@@ -37,6 +41,9 @@ public:
  
     void setTrainingData(const std::vector<Mat2D<double>>& aTrainingData);
     void setTrainingLabels(const std::vector<size_t>& aTrainingLabels);
+
+    void setTestingData(const std::vector<Mat2D<double>>& aTestingData);
+    void setTestingLabels(const std::vector<size_t>& aTestingLabels);
 
     void setActivationFunction(size_t ind, ActivationFunction aFunction);
 
@@ -65,6 +72,9 @@ private:
  
     std::vector<Mat2D<double>> mTrainingData;
     std::vector<size_t> mTrainingLabels;
+
+    std::vector<Mat2D<double>> mTestingData;
+    std::vector<size_t> mTestingLabels;
 
     // Layer outputs without activation function applied.
     std::vector<std::vector<double>> mLayerOutputs;

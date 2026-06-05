@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 #include <stdexcept>
 
 // Constructors
@@ -41,6 +42,10 @@ NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers)
     mActivationFunctions[aLayers.size() - 1] = ActivationFunction::None;   
 }
 
+NeuralNetwork::NeuralNetwork(const std::string& aModelFilePath) {
+    std::cout << "Attempting to create model from model file path: " << aModelFilePath;
+}
+
 size_t NeuralNetwork::size() const {
     return mLayerOutputs.size();
 }
@@ -53,7 +58,7 @@ size_t NeuralNetwork::trainingLabelsSize() const {
     return mTrainingLabels.size();
 }
 
-std::string NeuralNetwork::activationFunctionName(size_t ind) const { 
+std::string NeuralNetwork::getActivationFunctionName(size_t ind) const { 
     if (ind >= mActivationFunctions.size()) {
         throw std::out_of_range("Index out of range for retrieving activation function name");
     }
@@ -98,28 +103,69 @@ void NeuralNetwork::train(size_t numIterations) {
     std::cout << "------Training Finished------" << std::endl;
 }
 
-void NeuralNetwork::test(const std::vector<Mat2D<double>>& aImages, const std::vector<size_t>& aLabels, size_t aIterations) {
-    if (aImages.size() != aLabels.size()) {
+void NeuralNetwork::test() {
+    test(mTestingData.size());
+}
+
+void NeuralNetwork::test(size_t aIterations) {
+    if (mTestingData.size() != mTestingLabels.size()) {
         std::string errorMessage = "Neural Network test failed: Number of input images and labels must match\n";
-        errorMessage += std::string("Number of images: ") + std::to_string(aImages.size()) + "\n";
-        errorMessage += "Number of labels: " + std::to_string(aLabels.size()) + "\n";
+        errorMessage += std::string("Number of images: ") + std::to_string(mTestingData.size()) + "\n";
+        errorMessage += "Number of labels: " + std::to_string(mTrainingLabels.size()) + "\n";
         throw std::invalid_argument(errorMessage);
     }
 
     size_t correctIterations = 0;
-    for (size_t iteration = 0; iteration < std::min(aImages.size(), aIterations); ++iteration) {
+    for (size_t iteration = 0; iteration < std::min(mTestingData.size(), aIterations); ++iteration) {
         std::cout << "------Testing Iteration " << std::to_string(iteration + 1) << "------" << std::endl;
         // Run current image through the network
-        std::vector<double> output = forward(aImages[iteration].toVec());
+        std::vector<double> output = forward(mTestingData[iteration].toVec());
         // Compare network output with expected label
         size_t index = std::distance(output.begin(), std::max_element(output.begin(), output.end())) ;
-        correctIterations += (index == aLabels[iteration]);
+        correctIterations += (index == mTestingLabels[iteration]);
     }
     
     // Testing finished. Print output
     std::cout << "----Testing Finished----" << std::endl;
-    std::cout << "Accuracy: " << std::to_string(correctIterations) << "/" << std::to_string(aImages.size()) << " -> ";
-    std::cout << std::setprecision(2) << std::to_string(static_cast<double>(correctIterations) / aImages.size() * 100.0) << std::endl;
+    std::cout << "Accuracy: " << std::to_string(correctIterations) << "/" << std::to_string(mTestingData.size()) << " -> ";
+    std::cout << std::setprecision(2) << std::to_string(static_cast<double>(correctIterations) / mTestingData.size() * 100.0) << std::endl;
+}
+
+void NeuralNetwork::writeModel(const std::string& aModelFilePath) {
+    std::cout << "Attempting to write model at file path: " << aModelFilePath << std::endl;
+    std::ofstream outFile(aModelFilePath);
+
+    if (outFile.is_open() == false) {
+        std::cout << "Failed to open model file path for writing" << std::endl;
+    }
+
+    // Write model parameters to output file
+    outFile << "Epochs: " << mEpochs << std::endl;
+    outFile << "Learning Rate: " << mLearningRate << std::endl;
+    outFile << "Number of Layers: " << mLayerOutputs.size() << std::endl;
+    for (size_t i = 0; i < mLayerOutputs.size(); ++i) {
+        outFile << "---Layer " << i << "---" << std::endl;
+        outFile << "Activation Function: " << getActivationFunctionName(i) << std::endl;
+        outFile << "Layer size: " << mLayerOutputs[i].size() << std::endl;
+        if (i < mLayerOutputs.size() - 1) {
+            // Write weights matrices
+            outFile << "Weights: " << std::endl;
+            for (size_t row = 0; row < mWeights[i].height(); ++row) {
+                for (const auto& element : mWeights[i][row]) {
+                    outFile << element << " ";
+                }
+                outFile << std::endl;
+            }
+            // Write bias matrices
+            outFile << "Biases: " << std::endl;
+            for (const auto& element : mBiases[i]) {
+                outFile << element << " ";
+            }
+            outFile << std::endl;
+        }
+    }
+    std::cout << "Successfully wrote model to file at path: " << aModelFilePath << std::endl;
+    outFile.close();
 }
 
 void NeuralNetwork::setEpochs(size_t aEpochs) {
@@ -139,6 +185,14 @@ void NeuralNetwork::setTrainingData(const std::vector<Mat2D<double>>& aTrainingD
 
 void NeuralNetwork::setTrainingLabels(const std::vector<size_t>& aTrainingLabels) {
     mTrainingLabels = aTrainingLabels;
+}
+
+void NeuralNetwork::setTestingData(const std::vector<Mat2D<double>>& aTestingData) {
+    mTestingData = aTestingData;
+}
+
+void NeuralNetwork::setTestingLabels(const std::vector<size_t>& aTestingLabels) {
+    mTestingLabels = aTestingLabels;
 }
 
 void NeuralNetwork::setActivationFunction(size_t ind, ActivationFunction aFunction) {
@@ -285,7 +339,7 @@ std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork) {
         if (i < aNeuralNetwork.size() - 1) {
             //aOut << aNeuralNetwork.mWeights[i] << std::endl;
         }
-        aOut << "Activation Function: " << aNeuralNetwork.activationFunctionName(i) << std::endl << std::endl;
+        aOut << "Activation Function: " << aNeuralNetwork.getActivationFunctionName(i) << std::endl << std::endl;
     }
     std::cout << "---------------------------------------------" << std::endl;
     return aOut;

@@ -35,17 +35,23 @@ int main() {
     std::cout << layeredNetwork << std::endl;
 
 	// Training	
-    size_t iterations = trainingImages.size();
-	layeredNetwork.train(iterations);
+    size_t trainingIterations = 1000;
+	//layeredNetwork.train(trainingIterations);
 
     // Read testing data
-    std::vector<Mat2D<double>> testingImages = readImageData(testingImagesFilePath);
+    std::vector<Mat2D<double>> testingData = readImageData(testingImagesFilePath);
     std::vector<size_t> testingLabels = readImageLabels(testingLabelsFilePath);
 
-    size_t testingIterations = testingImages.size();
+    layeredNetwork.setTestingData(testingData);
+    layeredNetwork.setTestingLabels(testingLabels);
+
+    size_t testingIterations = testingData.size();
 
     // Testing
-    layeredNetwork.test(testingImages, testingLabels, testingIterations);
+    //layeredNetwork.test(testingIterations);
+
+
+    layeredNetwork.writeModel("test.txt");
 
     return 0;    
 }
