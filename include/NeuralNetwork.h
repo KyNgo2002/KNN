@@ -33,6 +33,7 @@ public:
     void test();
     void test(size_t aIterations);
 
+    NeuralNetwork readModel(const std::string& aModelFilePath);
     void writeModel(const std::string& aModelFilePath);
 
     void setEpochs(size_t aEpochs);
@@ -52,6 +53,7 @@ public:
     friend std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork);
 
 private:
+    NeuralNetwork(const std::vector<Mat2D<double>>& aWeights, const std::vector<std::vector<double>>& aBiases);
     std::vector<double> forward(const std::vector<double>& aInput);
     void backpropagation(size_t aCorrectDigit);
 

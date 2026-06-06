@@ -50,8 +50,9 @@ int main() {
     // Testing
     //layeredNetwork.test(testingIterations);
 
-
-    layeredNetwork.writeModel("test.txt");
+    const std::string filePath = "test.txt";
+    layeredNetwork.writeModel(filePath);
+    layeredNetwork.readModel(filePath);
 
     return 0;    
 }

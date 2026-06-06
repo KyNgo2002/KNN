@@ -46,6 +46,15 @@ NeuralNetwork::NeuralNetwork(const std::string& aModelFilePath) {
     std::cout << "Attempting to create model from model file path: " << aModelFilePath;
 }
 
+NeuralNetwork::NeuralNetwork(const std::vector<Mat2D<double>>& aWeights, const std::vector<std::vector<double>>& aBiases) {
+    if (aWeights.size() != aBiases.size()) {
+        std::string errorMessage = "Creation of Neural Network completed. Number of weights matrices and biases vectors must match.\n";
+        errorMessage += "Number of weights matrices: " + std::to_string(aWeights.size()) + "\n";
+        errorMessage += "Number of bias vectors: " + std::to_string(aBiases.size()) + "\n";
+        throw std::invalid_argument(errorMessage);
+    }
+}
+
 size_t NeuralNetwork::size() const {
     return mLayerOutputs.size();
 }
@@ -131,12 +140,117 @@ void NeuralNetwork::test(size_t aIterations) {
     std::cout << std::setprecision(2) << std::to_string(static_cast<double>(correctIterations) / mTestingData.size() * 100.0) << std::endl;
 }
 
+NeuralNetwork NeuralNetwork::readModel(const std::string& aModelFilePath) {
+    std::cout << "Attempting to read model at file path: " << aModelFilePath << std::endl;
+    std::ifstream inFile(aModelFilePath);
+    
+    if (!inFile.is_open()) {
+        std::cout << "Failed to open model file path for reading." << std::endl;
+        return NeuralNetwork();
+    }
+    std::string line;
+
+    auto parseLine = [](const std::string& aStr) -> std::string {
+        size_t i = aStr.size() - 1;
+        for (; i > 0; --i) {
+            if (aStr[i] == ' ') {
+                return aStr.substr(i + 1);
+            }
+        }
+        return "";
+    };
+
+    // Epochs
+    getline(inFile, line);
+    size_t numEpochs = std::stoul(parseLine(line));
+    std::cout << "Epochs: " << numEpochs << std::endl;
+
+    // Learning rate
+    getline(inFile, line);
+    double learningRate = std::stod(parseLine(line));
+    std::cout << "Learning Rate: " << learningRate << std::endl;
+
+    // Number of layers
+    getline(inFile, line);
+    size_t numLayers = std::stoul(parseLine(line));
+    std::cout << "Number of layers: " << numLayers << std::endl;
+
+    std::vector<Mat2D<double>> weights;
+    std::vector<std::vector<double>> biases;
+    // Read per-layer information
+    for (size_t layer = 0; layer < numLayers; ++layer) {
+        std::cout << "---Layer " << std::to_string(layer + 1) << "---" << std::endl;
+        // Layer number line
+        getline(inFile, line);        
+
+        // Activation Function
+        getline(inFile, line);
+        std::string activationFunction = parseLine(line);
+        std::cout << "Activation Function: " << activationFunction << std::endl;
+
+        // Layer size
+        getline(inFile, line);
+        size_t layerSize = std::stoul(parseLine(line));
+        std::cout << "Layer Size: " << layerSize << std::endl;
+
+        if (layer < numLayers - 1) {
+            // Next Layer size
+            getline(inFile, line);
+            size_t nextLayerSize = std::stoul(parseLine(line));
+            std::cout << "Next Layer Size: " << nextLayerSize << std::endl;
+
+            // Weights burner word
+            getline(inFile, line);
+
+            // Weights Matrix 
+            std::cout << "Weights: " << std::endl;
+            Mat2D<double> weightsMatrix(nextLayerSize, layerSize);
+            for (size_t row = 0; row < nextLayerSize; ++row) {
+                std::string token;
+                //Grab entire row in matrix
+                getline(inFile, line);
+                std::istringstream ss(line);
+                for (size_t col = 0; col < layerSize; ++col) {
+                    ss >> token;
+                    weightsMatrix[row][col] = std::stod(token);
+                }
+            }
+            weights.push_back(weightsMatrix);
+            std::cout << weightsMatrix << std::endl;
+
+            // Biases burner word
+            getline(inFile, line);
+
+            // Biases Matrix 
+            std::cout << "Biases:" << std::endl;
+            std::vector<double> bias(nextLayerSize);
+            getline(inFile, line);
+            std::string token;
+            std::stringstream ss(line);
+            for (size_t i = 0; i < nextLayerSize; ++i) {
+                ss >> token;
+                bias[i] = std::stod(token);
+            }
+            biases.push_back(bias);
+            Util::Print(bias);
+        }
+    }
+    NeuralNetwork network(weights, biases);
+
+    std::cout << "Successfully read model from file at path: " << aModelFilePath << std::endl;
+
+    inFile.close();
+
+    return network;
+}
+
 void NeuralNetwork::writeModel(const std::string& aModelFilePath) {
     std::cout << "Attempting to write model at file path: " << aModelFilePath << std::endl;
     std::ofstream outFile(aModelFilePath);
 
-    if (outFile.is_open() == false) {
-        std::cout << "Failed to open model file path for writing" << std::endl;
+    if (!outFile.is_open()) {
+        std::cout << "Failed to open model file path for writing." << std::endl;
+        return;
     }
 
     // Write model parameters to output file
@@ -144,12 +258,13 @@ void NeuralNetwork::writeModel(const std::string& aModelFilePath) {
     outFile << "Learning Rate: " << mLearningRate << std::endl;
     outFile << "Number of Layers: " << mLayerOutputs.size() << std::endl;
     for (size_t i = 0; i < mLayerOutputs.size(); ++i) {
-        outFile << "---Layer " << i << "---" << std::endl;
+        outFile << "---Layer " << i + 1 << "---" << std::endl;
         outFile << "Activation Function: " << getActivationFunctionName(i) << std::endl;
         outFile << "Layer size: " << mLayerOutputs[i].size() << std::endl;
         if (i < mLayerOutputs.size() - 1) {
+            outFile << "Next Layer Size: " << mLayerOutputs[i + 1].size() << std::endl;
             // Write weights matrices
-            outFile << "Weights: " << std::endl;
+            outFile << "Weights:" << std::endl;
             for (size_t row = 0; row < mWeights[i].height(); ++row) {
                 for (const auto& element : mWeights[i][row]) {
                     outFile << element << " ";
