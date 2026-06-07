@@ -38,21 +38,62 @@ NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers)
     
     mActivationFunctions.resize(aLayers.size(), ActivationFunction::ReLu);
 
-    // The last layer does not have an activation function
-    mActivationFunctions[aLayers.size() - 1] = ActivationFunction::None;   
+    mActivationFunctions[mActivationFunctions.size() - 1] = ActivationFunction::None;
 }
 
 NeuralNetwork::NeuralNetwork(const std::string& aModelFilePath) {
     std::cout << "Attempting to create model from model file path: " << aModelFilePath;
 }
 
-NeuralNetwork::NeuralNetwork(const std::vector<Mat2D<double>>& aWeights, const std::vector<std::vector<double>>& aBiases) {
+NeuralNetwork::NeuralNetwork(size_t aEpochs, double aLearningRate, const std::vector<Mat2D<double>>& aWeights, const std::vector<std::vector<double>>& aBiases, const std::vector<ActivationFunction>& aActivationFunctions) {
     if (aWeights.size() != aBiases.size()) {
-        std::string errorMessage = "Creation of Neural Network completed. Number of weights matrices and biases vectors must match.\n";
+        std::string errorMessage = "Creation of Neural Network failed. Number of weights matrices and biases vectors must match.\n";
         errorMessage += "Number of weights matrices: " + std::to_string(aWeights.size()) + "\n";
         errorMessage += "Number of bias vectors: " + std::to_string(aBiases.size()) + "\n";
         throw std::invalid_argument(errorMessage);
     }
+
+    if (aActivationFunctions.size() != aWeights.size()) {
+        std::string errorMessage = "Creation of Neural Network failed. Number of activation functions must match the number of weights/bias containers.\n";
+        errorMessage += "Expected number of activation functions: " + std::to_string(aBiases.size()) + "\n";
+        errorMessage += "Number of provided activation functions: " + std::to_string(aActivationFunctions.size()) + "\n";
+    }
+
+    // Verify weights matrices
+    if (aWeights[0].width() != 784) {
+        throw std::length_error("Construction of Neural Network failed. First matrix must have a width of 784.");
+    }
+    if (aWeights.back().height() != 10) {
+        throw std::length_error("Construction of Neural Network failed. Last matrix must ahve a height of 10.");
+    }
+
+    for (size_t i = 0; i < aWeights.size() - 1; ++i) {
+        if (aWeights[i].height() != aWeights[i + 1].width()) {
+            std::string errorMessage = "Construction of Neural Network failed. Incorrect size of consecutive matrices\n";
+            errorMessage += "Matrix " + std::to_string(i + 1) + " size: " + aWeights[i].size() + "\n";
+            errorMessage += "Matrix " + std::to_string(i + 2) + " size: " + aWeights[i + 1].size() + "\n";
+            throw std::invalid_argument(errorMessage);
+        }
+    }
+
+    // Verify bias vectors
+    for (size_t i = 0; i < aBiases.size(); ++i) {
+        if (aBiases[i].size() != aWeights[i].height()) {
+            std::string errorMessage = "Construction of Neural Network failed. Incorrect size of bias vectors.\n";
+            errorMessage += "Expected size: " + std::to_string(aBiases[i].size()) + "\n";
+            errorMessage += "Bias Vector " + std::to_string(i + 1) + " size: " + std::to_string(aBiases[i].size()) + "\n";
+            throw std::invalid_argument(errorMessage);
+        }
+    }
+    
+    // Initial verification successful, create network
+    mEpochs = aEpochs;
+    mLearningRate = aLearningRate;
+    mWeights = aWeights;
+    mBiases = aBiases;
+    mActivationFunctions = aActivationFunctions;
+    mLayerOutputs.resize(aWeights.size() + 1);
+    mLayerOutputsTransformed.resize(aWeights.size() + 1);
 }
 
 size_t NeuralNetwork::size() const {
@@ -117,9 +158,15 @@ void NeuralNetwork::test() {
 }
 
 void NeuralNetwork::test(size_t aIterations) {
+    if (mTestingData.size() == 0 || mTestingLabels.size() == 0) {
+        std::string errorMessage = "Neural Network unable to test: Testing data and labels must be provided.\n";
+        errorMessage += "Provided test data: " + std::to_string(mTestingData.size()) + "\n";
+        errorMessage += "Provided number of labels: " + std::to_string(mTrainingLabels.size()) + "\n";
+        throw std::invalid_argument(errorMessage);
+    }
     if (mTestingData.size() != mTestingLabels.size()) {
         std::string errorMessage = "Neural Network test failed: Number of input images and labels must match\n";
-        errorMessage += std::string("Number of images: ") + std::to_string(mTestingData.size()) + "\n";
+        errorMessage += "Number of images: " + std::to_string(mTestingData.size()) + "\n";
         errorMessage += "Number of labels: " + std::to_string(mTrainingLabels.size()) + "\n";
         throw std::invalid_argument(errorMessage);
     }
@@ -160,50 +207,56 @@ NeuralNetwork NeuralNetwork::readModel(const std::string& aModelFilePath) {
         return "";
     };
 
+    auto getActivationFunctionHelper = [](const std::string& aActivationFunctionName) -> ActivationFunction {
+        if (aActivationFunctionName == "Sigmoid") {
+            return ActivationFunction::Sigmoid;
+        }
+        else if (aActivationFunctionName == "ReLu") {
+            return ActivationFunction::ReLu;
+        }
+        else {
+            return ActivationFunction::None;
+        }
+    };
+
     // Epochs
     getline(inFile, line);
     size_t numEpochs = std::stoul(parseLine(line));
-    std::cout << "Epochs: " << numEpochs << std::endl;
 
     // Learning rate
     getline(inFile, line);
     double learningRate = std::stod(parseLine(line));
-    std::cout << "Learning Rate: " << learningRate << std::endl;
 
     // Number of layers
     getline(inFile, line);
     size_t numLayers = std::stoul(parseLine(line));
-    std::cout << "Number of layers: " << numLayers << std::endl;
 
     std::vector<Mat2D<double>> weights;
     std::vector<std::vector<double>> biases;
+    std::vector<ActivationFunction> activationFunctions;
     // Read per-layer information
     for (size_t layer = 0; layer < numLayers; ++layer) {
-        std::cout << "---Layer " << std::to_string(layer + 1) << "---" << std::endl;
         // Layer number line
         getline(inFile, line);        
 
         // Activation Function
         getline(inFile, line);
         std::string activationFunction = parseLine(line);
-        std::cout << "Activation Function: " << activationFunction << std::endl;
+        activationFunctions.push_back(getActivationFunctionHelper(activationFunction));
 
         // Layer size
         getline(inFile, line);
         size_t layerSize = std::stoul(parseLine(line));
-        std::cout << "Layer Size: " << layerSize << std::endl;
 
         if (layer < numLayers - 1) {
             // Next Layer size
             getline(inFile, line);
             size_t nextLayerSize = std::stoul(parseLine(line));
-            std::cout << "Next Layer Size: " << nextLayerSize << std::endl;
 
             // Weights burner word
             getline(inFile, line);
 
             // Weights Matrix 
-            std::cout << "Weights: " << std::endl;
             Mat2D<double> weightsMatrix(nextLayerSize, layerSize);
             for (size_t row = 0; row < nextLayerSize; ++row) {
                 std::string token;
@@ -216,13 +269,11 @@ NeuralNetwork NeuralNetwork::readModel(const std::string& aModelFilePath) {
                 }
             }
             weights.push_back(weightsMatrix);
-            std::cout << weightsMatrix << std::endl;
 
             // Biases burner word
             getline(inFile, line);
 
             // Biases Matrix 
-            std::cout << "Biases:" << std::endl;
             std::vector<double> bias(nextLayerSize);
             getline(inFile, line);
             std::string token;
@@ -232,14 +283,14 @@ NeuralNetwork NeuralNetwork::readModel(const std::string& aModelFilePath) {
                 bias[i] = std::stod(token);
             }
             biases.push_back(bias);
-            Util::Print(bias);
         }
     }
-    NeuralNetwork network(weights, biases);
 
     std::cout << "Successfully read model from file at path: " << aModelFilePath << std::endl;
-
     inFile.close();
+
+    // Create new model
+    NeuralNetwork network(numEpochs, learningRate, weights, biases, activationFunctions);
 
     return network;
 }
@@ -315,8 +366,7 @@ void NeuralNetwork::setActivationFunction(size_t ind, ActivationFunction aFuncti
         throw std::out_of_range("Invalid index provided to set activation function");
     }
     if (ind == 0 || ind == mActivationFunctions.size() - 1) {
-        std::cout << "Activation function may not be set for the first and last layers in the network" << std::endl;
-        return;
+        throw std::invalid_argument("Cannot set the activation function for the first or last layer");
     }
     mActivationFunctions[ind] = aFunction;    
 }

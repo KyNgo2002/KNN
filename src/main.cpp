@@ -36,7 +36,7 @@ int main() {
 
 	// Training	
     size_t trainingIterations = 1000;
-	//layeredNetwork.train(trainingIterations);
+	layeredNetwork.train(trainingIterations);
 
     // Read testing data
     std::vector<Mat2D<double>> testingData = readImageData(testingImagesFilePath);
@@ -48,11 +48,14 @@ int main() {
     size_t testingIterations = testingData.size();
 
     // Testing
-    //layeredNetwork.test(testingIterations);
+    layeredNetwork.test(testingIterations);
 
     const std::string filePath = "test.txt";
     layeredNetwork.writeModel(filePath);
-    layeredNetwork.readModel(filePath);
+    NeuralNetwork copyNetwork = NeuralNetwork::readModel(filePath);
 
+    copyNetwork.setTestingData(testingData);
+    copyNetwork.setTestingLabels(testingLabels);
+    copyNetwork.test(testingIterations);
     return 0;    
 }
