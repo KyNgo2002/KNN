@@ -21,10 +21,11 @@ public:
     NeuralNetwork() = default;
     NeuralNetwork(std::vector<size_t>& aLayers);
     NeuralNetwork(const std::string& aModelFilePath);
+    NeuralNetwork(size_t aEpochs, double aLearningRate, const std::vector<Mat2D<double>>& aWeights, const std::vector<std::vector<double>>& aBiases, const std::vector<ActivationFunction>& aActivationFunctions);
 
     size_t size() const;
-    size_t trainingDataSize() const;
-    size_t trainingLabelsSize() const;
+    size_t trainingSetSize() const;
+    size_t testingSetSize() const;
     std::string getActivationFunctionName(size_t ind) const;
 
 	void train();
@@ -32,6 +33,9 @@ public:
 
     void test();
     void test(size_t aIterations);
+    size_t testSingleImage(size_t aImageIdx);
+
+    void printSingleTestImage(size_t aImageIdx);
 
     static NeuralNetwork readModel(const std::string& aModelFilePath);
     void writeModel(const std::string& aModelFilePath);
@@ -53,7 +57,6 @@ public:
     friend std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork);
 
 private:
-    NeuralNetwork(size_t aEpochs, double aLearningRate, const std::vector<Mat2D<double>>& aWeights, const std::vector<std::vector<double>>& aBiases, const std::vector<ActivationFunction>& aActivationFunctions);
     std::vector<double> forward(const std::vector<double>& aInput);
     void backpropagation(size_t aCorrectDigit);
 

@@ -3,6 +3,7 @@
 #include <string>
 
 #include "../include/Mat2D.h"
+#include "../include/NetworkRunner.h"
 #include "../include/NeuralNetwork.h"
 #include "../include/Reader.h"
 #include "../include/Util.h"
@@ -29,14 +30,14 @@ int main() {
     layeredNetwork.setTrainingLabels(trainingLabels);
 
     std::cout << "Training Data: " << std::endl; 
-    std::cout << "Number of Images: " << layeredNetwork.trainingDataSize() << std::endl;    
-    std::cout << "Number of Labels: " << layeredNetwork.trainingLabelsSize() << std::endl << std::endl;
+    std::cout << "Number of Images: " << layeredNetwork.trainingSetSize() << std::endl;    
+    std::cout << "Number of Labels: " << layeredNetwork.trainingSetSize() << std::endl << std::endl;
 
     std::cout << layeredNetwork << std::endl;
 
 	// Training	
-    size_t trainingIterations = 1000;
-	//layeredNetwork.train(trainingIterations);
+    size_t trainingIterations = 500;
+	layeredNetwork.train(trainingIterations);
 
     // Read testing data
     std::vector<Mat2D<double>> testingData = readImageData(testingImagesFilePath);
@@ -51,11 +52,14 @@ int main() {
     //layeredNetwork.test(testingIterations);
 
     const std::string filePath = "test.txt";
-    //layeredNetwork.writeModel(filePath);
+    layeredNetwork.writeModel(filePath);
     NeuralNetwork copyNetwork = NeuralNetwork::readModel(filePath);
 
     copyNetwork.setTestingData(testingData);
     copyNetwork.setTestingLabels(testingLabels);
-    copyNetwork.test(testingIterations);
+    //copyNetwork.test(testingIterations);
+
+    NetworkRunner runner(&copyNetwork);
+    runner.run();
     return 0;    
 }

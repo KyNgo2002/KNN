@@ -194,7 +194,7 @@ std::ostream& operator<<(std::ostream& aOut, const Mat2D<U>& aMatrix) {
     for (const auto& row : aMatrix.mData) {
         std::cout << "[ "; 
         for (auto value : row) {
-            std::cout << std::setw(8) << std::setprecision(6) << static_cast<double>(value) << " ";
+            std::cout << std::setw(5) << std::setprecision(2) << static_cast<double>(value) << " ";
         }        
         std::cout << "]" << std::endl;
     }

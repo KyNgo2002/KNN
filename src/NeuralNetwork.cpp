@@ -100,12 +100,24 @@ size_t NeuralNetwork::size() const {
     return mLayerOutputs.size();
 }
 
-size_t NeuralNetwork::trainingDataSize() const {
+size_t NeuralNetwork::trainingSetSize() const {
+    if (mTrainingData.size() != mTrainingLabels.size()) {
+        std::string errorMessage = "Training data size and training labels size should match\n";
+        errorMessage += "Training Data size: " + std::to_string(mTrainingData.size()) + "\n";
+        errorMessage += "Training Labels size: " + std::to_string(mTrainingLabels.size()) + "\n";
+        throw std::length_error(errorMessage);
+    }
     return mTrainingData.size();
 }
 
-size_t NeuralNetwork::trainingLabelsSize() const {
-    return mTrainingLabels.size();
+size_t NeuralNetwork::testingSetSize() const {
+    if (mTestingData.size() != mTestingLabels.size()) {
+        std::string errorMessage = "Training data size and training labels size should match\n";
+        errorMessage += "Training Data size: " + std::to_string(mTrainingData.size()) + "\n";
+        errorMessage += "Training Labels size: " + std::to_string(mTrainingLabels.size()) + "\n";
+        throw std::length_error(errorMessage);
+    }
+    return mTestingData.size();
 }
 
 std::string NeuralNetwork::getActivationFunctionName(size_t ind) const { 
@@ -174,17 +186,39 @@ void NeuralNetwork::test(size_t aIterations) {
     size_t correctIterations = 0;
     for (size_t iteration = 0; iteration < std::min(mTestingData.size(), aIterations); ++iteration) {
         std::cout << "------Testing Iteration " << std::to_string(iteration + 1) << "------" << std::endl;
-        // Run current image through the network
-        std::vector<double> output = forward(mTestingData[iteration].toVec());
-        // Compare network output with expected label
-        size_t index = std::distance(output.begin(), std::max_element(output.begin(), output.end())) ;
-        correctIterations += (index == mTestingLabels[iteration]);
+        size_t output = testSingleImage(iteration);
+        correctIterations += (output == mTestingLabels[iteration]);
     }
     
     // Testing finished. Print output
     std::cout << "----Testing Finished----" << std::endl;
     std::cout << "Accuracy: " << std::to_string(correctIterations) << "/" << std::to_string(mTestingData.size()) << " -> ";
     std::cout << std::setprecision(2) << std::to_string(static_cast<double>(correctIterations) / mTestingData.size() * 100.0) << std::endl;
+}
+
+size_t NeuralNetwork::testSingleImage(size_t aImageIdx) {
+    if (aImageIdx > testingSetSize()) {
+        std::string errorMessage = "Test single image: Provided index is out of range\n";
+        errorMessage += "Valid range: [0, " + std::to_string(testingSetSize() - 1) + "]\n";
+        errorMessage += "Provided index: " + std::to_string(aImageIdx) + "\n";
+        throw std::invalid_argument(errorMessage);
+    }
+    
+    // Run current image through the network
+    std::vector<double> output = forward(mTestingData[aImageIdx].toVec());
+    // Compute index of output image
+    return std::distance(output.begin(), std::max_element(output.begin(), output.end())) ;
+}
+
+void NeuralNetwork::printSingleTestImage(size_t aImageIdx) {
+    if (aImageIdx > testingSetSize()) {
+        std::string errorMessage = "Print single image: Provided index is out of range\n";
+        errorMessage += "Valid range: [0, " + std::to_string(testingSetSize() - 1) + "]\n";
+        errorMessage += "Provided index: " + std::to_string(aImageIdx) + "\n";
+        throw std::invalid_argument(errorMessage);
+    }
+    
+    std::cout << mTestingData[aImageIdx] << std::endl;
 }
 
 NeuralNetwork NeuralNetwork::readModel(const std::string& aModelFilePath) {
@@ -499,11 +533,7 @@ std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork) {
     aOut << "Learning Rate: " << aNeuralNetwork.mLearningRate << std::endl << std::endl;
     for (size_t i = 0; i < aNeuralNetwork.size(); ++i) {
         aOut << "---Layer " << i + 1 << "---" << std::endl;
-        aOut << "Nodes: " << aNeuralNetwork.mLayerOutputs[i].size() << std::endl;
-        aOut << "Weights: " << std::endl;
-        if (i < aNeuralNetwork.size() - 1) {
-            //aOut << aNeuralNetwork.mWeights[i] << std::endl;
-        }
+        aOut << "Nodes: " << aNeuralNetwork.mLayerOutputsTransformed[i].size() << std::endl;
         aOut << "Activation Function: " << aNeuralNetwork.getActivationFunctionName(i) << std::endl << std::endl;
     }
     std::cout << "---------------------------------------------" << std::endl;
