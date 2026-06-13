@@ -36,7 +36,7 @@ int main() {
     std::cout << layeredNetwork << std::endl;
 
 	// Training	
-    size_t trainingIterations = 500;
+    size_t trainingIterations = trainingImages.size();
 	layeredNetwork.train(trainingIterations);
 
     // Read testing data
@@ -49,15 +49,15 @@ int main() {
     size_t testingIterations = testingData.size();
 
     // Testing
-    //layeredNetwork.test(testingIterations);
+    layeredNetwork.test(testingIterations);
 
-    const std::string filePath = "test.txt";
-    layeredNetwork.writeModel(filePath);
-    NeuralNetwork copyNetwork = NeuralNetwork::readModel(filePath);
+    const std::string modelExportFilePath = "modelExportFile.txt";
+    layeredNetwork.writeModel(modelExportFilePath);
+    NeuralNetwork copyNetwork = NeuralNetwork::readModel(modelExportFilePath);
 
     copyNetwork.setTestingData(testingData);
     copyNetwork.setTestingLabels(testingLabels);
-    //copyNetwork.test(testingIterations);
+    copyNetwork.test(testingIterations);
 
     NetworkRunner runner(&copyNetwork);
     runner.run();
