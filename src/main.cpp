@@ -37,7 +37,7 @@ int main() {
 
 	// Training	
     size_t trainingIterations = trainingImages.size();
-	layeredNetwork.train(trainingIterations);
+	//layeredNetwork.train(trainingIterations);
 
     // Read testing data
     std::vector<Mat2D<double>> testingData = readImageData(testingImagesFilePath);
@@ -49,10 +49,10 @@ int main() {
     size_t testingIterations = testingData.size();
 
     // Testing
-    layeredNetwork.test(testingIterations);
+    //layeredNetwork.test(testingIterations);
 
     const std::string modelExportFilePath = "modelExportFile.txt";
-    layeredNetwork.writeModel(modelExportFilePath);
+    //layeredNetwork.writeModel(modelExportFilePath);
     NeuralNetwork copyNetwork = NeuralNetwork::readModel(modelExportFilePath);
 
     copyNetwork.setTestingData(testingData);
