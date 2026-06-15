@@ -7,7 +7,7 @@
 #include <stdexcept>
 
 // Constructors
-NeuralNetwork::NeuralNetwork(std::vector<size_t>& aLayers) 
+NeuralNetwork::NeuralNetwork(const std::vector<size_t>& aLayers) 
     : mGenerator{std::random_device()()}, mEpochs{1}, mLearningRate{0.01} {
     if (aLayers.size() < 2) {
         throw std::invalid_argument("NeuralNetwork must be initialized with at least 2 layers");
@@ -197,7 +197,7 @@ void NeuralNetwork::test(size_t aIterations) {
 }
 
 size_t NeuralNetwork::testSingleImage(size_t aImageIdx) {
-    if (aImageIdx > testingSetSize()) {
+    if (aImageIdx >= testingSetSize()) {
         std::string errorMessage = "Test single image: Provided index is out of range\n";
         errorMessage += "Valid range: [0, " + std::to_string(testingSetSize() - 1) + "]\n";
         errorMessage += "Provided index: " + std::to_string(aImageIdx) + "\n";
@@ -232,6 +232,9 @@ NeuralNetwork NeuralNetwork::readModel(const std::string& aModelFilePath) {
     std::string line;
 
     auto parseLine = [](const std::string& aStr) -> std::string {
+        if (aStr.empty()) {
+            throw std::invalid_argument("Read model parse line. Empty string provided");
+        }
         size_t i = aStr.size() - 1;
         for (; i > 0; --i) {
             if (aStr[i] == ' ') {
@@ -374,7 +377,7 @@ void NeuralNetwork::setEpochs(size_t aEpochs) {
 
 void NeuralNetwork::setLearningRate(double aLearningRate) {
     if (aLearningRate <= 0) {
-        std::cout << "Learning rate must be larger than 0.0" << std::endl;
+        throw std::invalid_argument("Learning rate must be larger than 0.0");
     }
     mLearningRate = aLearningRate;
 }
@@ -436,11 +439,15 @@ std::vector<double> NeuralNetwork::forward(const std::vector<double>& aInput) {
 }
 
 void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
+    if (aCorrectDigit > 9) {
+        throw std::invalid_argument("Invalid label passed to backpropagation.");
+    }
     std::vector<double> expected(10, 0.0);
     expected[aCorrectDigit] = 1.0;
     std::vector<double> delta = Util::Subtract(mLayerOutputsTransformed.back(), expected); 
     for (int idx = mWeights.size() - 1; idx >= 0; --idx) {
         Mat2D<double> gradient = Util::VecToMatrix(delta, mLayerOutputsTransformed[idx]);
+        auto transpose = mWeights[idx].transpose();
         auto oldWeights = mWeights[idx];
         mWeights[idx] = mWeights[idx] - gradient.scalar(mLearningRate);
         for (size_t i = 0; i < delta.size(); ++i) {
@@ -448,7 +455,7 @@ void NeuralNetwork::backpropagation(size_t aCorrectDigit) {
         }
 
         if (idx > 0) {
-            delta = oldWeights.transpose().multiply(delta);
+            delta = transpose.multiply(delta);
             std::vector<double> derivative = mLayerOutputs[idx];
 
             for (double& element : derivative) {

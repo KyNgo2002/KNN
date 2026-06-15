@@ -19,7 +19,7 @@ public:
     };
 
     NeuralNetwork() = default;
-    NeuralNetwork(std::vector<size_t>& aLayers);
+    NeuralNetwork(const std::vector<size_t>& aLayers);
     NeuralNetwork(const std::string& aModelFilePath);
     NeuralNetwork(size_t aEpochs, double aLearningRate, const std::vector<Mat2D<double>>& aWeights, const std::vector<std::vector<double>>& aBiases, const std::vector<ActivationFunction>& aActivationFunctions);
 

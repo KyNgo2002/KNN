@@ -26,10 +26,10 @@ public:
     std::string size() const;    
 
     Mat2D<T> add(const Mat2D<T>& aOther);
-    std::vector<T> multiply(const std::vector<T>& aVec);
+    std::vector<T> multiply(const std::vector<T>& aVec) const;
     Mat2D<T> scalar(double aScalar);
 	
-    Mat2D<T> transpose();
+    Mat2D<T> transpose() const;
 	std::vector<T> toVec() const;
 
     std::vector<T>& operator[](size_t row);
@@ -101,14 +101,7 @@ std::string Mat2D<T>::size() const {
 }
 
 template <Numeric T>
-Mat2D<T> Mat2D<T>::add(const Mat2D<T>& aOther) {
-    if (aOther.mWidth != mWidth || aOther.mHeight != mHeight) {
-       throw std::invalid_argument("Attempting to add Mat2D with matrix that does not match the current matrix"); 
-    }
-}
-
-template <Numeric T>
-std::vector<T> Mat2D<T>::multiply(const std::vector<T>& aVec) {
+std::vector<T> Mat2D<T>::multiply(const std::vector<T>& aVec) const {
     if (aVec.size() != mWidth) {
         std::string errorMessage = "Attempting to multiply Mat2D with incorrectly sized vector.\nInput Vector size: " + std::to_string(aVec.size()) + "\nInput Matrix size: " + this->size() + "\n";
         throw std::length_error(errorMessage);
@@ -134,7 +127,7 @@ Mat2D<T> Mat2D<T>::scalar(double scalar) {
 }
 
 template <Numeric T>
-Mat2D<T> Mat2D<T>::transpose() {
+Mat2D<T> Mat2D<T>::transpose() const {
     Mat2D<T> output(mWidth, mHeight);
     for (size_t i = 0; i < mHeight; ++i) {
         for (size_t j = 0; j < mWidth; ++j) {
