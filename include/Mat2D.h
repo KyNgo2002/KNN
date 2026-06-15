@@ -29,11 +29,11 @@ public:
     std::vector<T> multiply(const std::vector<T>& aVec) const;
     Mat2D<T> scalar(double aScalar);
 	
+    std::vector<T>& data();
     Mat2D<T> transpose() const;
-	std::vector<T> toVec() const;
 
-    std::vector<T>& operator[](size_t row);
-    const std::vector<T>& operator[](size_t row) const;
+    T* operator[](size_t row);
+    const T* operator[](size_t row) const;
 
     Mat2D<T> operator-(const Mat2D<T>& aMat);
 
@@ -43,31 +43,31 @@ public:
 private:
     size_t mHeight;
     size_t mWidth;
-    std::vector<std::vector<T>> mData;
+    std::vector<T> mData;
 };
 
 template <Numeric T>
 Mat2D<T>::Mat2D(size_t aHeight, size_t aWidth) {
     mHeight = aHeight;
     mWidth = aWidth;
-    mData.resize(aHeight, std::vector<T>(aWidth));
+    mData.resize(aHeight * aWidth);
 }
 
 template <Numeric T>
 Mat2D<T>::Mat2D(size_t aHeight, size_t aWidth, T value) {
     mHeight = aHeight;
     mWidth = aWidth;
-    mData.resize(aHeight, std::vector<T>(aWidth, value));
+    mData.resize(aHeight * aWidth, value);
 }
 
 template <Numeric T>
 Mat2D<T>& Mat2D<T>::operator=(const Mat2D<T>& aOther) {
     mHeight = aOther.mHeight;
     mWidth = aOther.mWidth;
-    mData.assign(mHeight, std::vector<T>(mWidth));
+    mData.resize(mHeight * mWidth);
     for (size_t i = 0; i < mHeight; ++i) {
         for (size_t j = 0; j < mWidth; ++j) {
-            mData[i][j] = aOther[i][j];
+            mData[i * mWidth + j] = aOther[i][j];
         }
     }
     return *this;
@@ -77,10 +77,10 @@ template <Numeric T>
 Mat2D<T>::Mat2D(const Mat2D<T>& aOther) {
     mWidth = aOther.mWidth;
     mHeight = aOther.mHeight;
-    mData.resize(mHeight, std::vector<T>(mWidth));
+    mData.resize(mHeight * mWidth);
     for (size_t i = 0; i < mHeight; ++i) {
         for (size_t j = 0; j < mWidth; ++j) {
-            mData[i][j] = aOther.mData[i][j];
+            mData[i * mWidth + j] = aOther[i][j];
         }
     }
 }
@@ -110,7 +110,7 @@ std::vector<T> Mat2D<T>::multiply(const std::vector<T>& aVec) const {
     std::vector<T> output(mHeight);
     for (size_t row = 0; row < mHeight; ++row) {
         for (size_t col = 0; col < mWidth; ++col) {
-            output[row] += aVec[col] * mData[row][col]; 
+            output[row] += aVec[col] * mData[row * mWidth + col]; 
         }
     }
     return output;
@@ -118,12 +118,17 @@ std::vector<T> Mat2D<T>::multiply(const std::vector<T>& aVec) const {
 
 template <Numeric T>
 Mat2D<T> Mat2D<T>::scalar(double scalar) {
-    for (auto& row : mData) {
-        for (T& elem : row) {
-            elem = elem * scalar;
-        }
+    Mat2D<T> output(mHeight, mWidth);
+    output.mData = this->mData;
+    for (auto& elem : output.mData) { 
+        elem *= scalar;
     }
-    return *this; 
+    return output; 
+}
+
+template <Numeric T>
+std::vector<T>& Mat2D<T>::data() {
+    return mData;
 }
 
 template <Numeric T>
@@ -131,37 +136,26 @@ Mat2D<T> Mat2D<T>::transpose() const {
     Mat2D<T> output(mWidth, mHeight);
     for (size_t i = 0; i < mHeight; ++i) {
         for (size_t j = 0; j < mWidth; ++j) {
-            output[j][i] = mData[i][j];  
+            output[j][i] = mData[i * mWidth + j];  
         }
     }
     return output;
 }
 
 template <Numeric T>
-std::vector<T> Mat2D<T>::toVec() const {
-	std::vector<T> output(mWidth * mHeight);
-	for (size_t row = 0; row < mHeight; ++row) {
-		for (size_t col = 0; col < mWidth; ++col) {
-			output[row * mWidth + col] = mData[row][col];
-		}
-	} 
-	return output;
-}
-
-template <Numeric T>
-std::vector<T>& Mat2D<T>::operator[](size_t row) {
+T* Mat2D<T>::operator[](size_t row) {
     if (row >= mHeight) {
         throw std::out_of_range("Invalid query into matrix");  
     }
-    return mData[row];
+    return mData.data() + row * mWidth;
 }
 
 template <Numeric T>
-const std::vector<T>& Mat2D<T>::operator[](size_t row) const {
+const T* Mat2D<T>::operator[](size_t row) const {
     if (row >= mHeight) {
         throw std::out_of_range("Invalid query into matrix");  
     }
-    return mData[row];
+    return mData.data() + row * mWidth;
 }
 
 
@@ -176,7 +170,7 @@ Mat2D<T> Mat2D<T>::operator-(const Mat2D<T>& aMat) {
     Mat2D<T> output(mHeight, mWidth);
     for (size_t i = 0; i < mHeight; ++i) {
         for (size_t j = 0; j < mWidth; ++j) {
-            output[i][j] = mData[i][j] - aMat[i][j]; 
+            output[i][j] = mData[i * mWidth + j] - aMat[i][j]; 
         }
     }
     return output;
@@ -184,10 +178,10 @@ Mat2D<T> Mat2D<T>::operator-(const Mat2D<T>& aMat) {
 
 template <Numeric U>
 std::ostream& operator<<(std::ostream& aOut, const Mat2D<U>& aMatrix) {
-    for (const auto& row : aMatrix.mData) {
+    for (size_t i = 0; i < aMatrix.height(); ++i) {
         std::cout << "[ "; 
-        for (auto value : row) {
-            std::cout << std::setw(5) << std::setprecision(2) << static_cast<double>(value) << " ";
+        for (size_t j = 0; j < aMatrix.width(); ++j) {
+            std::cout << std::setw(5) << std::setprecision(2) << static_cast<double>(aMatrix[i][j]) << " ";
         }        
         std::cout << "]" << std::endl;
     }

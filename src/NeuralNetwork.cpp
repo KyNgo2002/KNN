@@ -155,7 +155,7 @@ void NeuralNetwork::train(size_t numIterations) {
 	for (size_t imageIdx = 0; imageIdx < numTrainingIterations; ++imageIdx) {
 		std::cout << "\n------Training Iteration #" << imageIdx + 1 << "------" << std::endl;
 		// Forward pass
-        std::vector<double> output = forward(mTrainingData[imageIdx].toVec());
+        std::vector<double> output = forward(mTrainingData[imageIdx].data());
 
 		// Backpropagation
         backpropagation(mTrainingLabels[imageIdx]); 
@@ -205,7 +205,7 @@ size_t NeuralNetwork::testSingleImage(size_t aImageIdx) {
     }
     
     // Run current image through the network
-    std::vector<double> output = forward(mTestingData[aImageIdx].toVec());
+    std::vector<double> output = forward(mTestingData[aImageIdx].data());
     // Compute index of output image
     return std::distance(output.begin(), std::max_element(output.begin(), output.end())) ;
 }
@@ -354,8 +354,8 @@ void NeuralNetwork::writeModel(const std::string& aModelFilePath) {
             // Write weights matrices
             outFile << "Weights:" << std::endl;
             for (size_t row = 0; row < mWeights[i].height(); ++row) {
-                for (const auto& element : mWeights[i][row]) {
-                    outFile << element << " ";
+                for (size_t col = 0; col < mWeights[i].width(); ++col) {
+                    outFile << mWeights[row][col] << " ";
                 }
                 outFile << std::endl;
             }
