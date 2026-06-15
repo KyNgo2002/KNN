@@ -179,11 +179,11 @@ Mat2D<T> Mat2D<T>::operator-(const Mat2D<T>& aMat) {
 template <Numeric U>
 std::ostream& operator<<(std::ostream& aOut, const Mat2D<U>& aMatrix) {
     for (size_t i = 0; i < aMatrix.height(); ++i) {
-        std::cout << "[ "; 
+        aOut << "[ "; 
         for (size_t j = 0; j < aMatrix.width(); ++j) {
-            std::cout << std::setw(5) << std::setprecision(2) << static_cast<double>(aMatrix[i][j]) << " ";
+            aOut << std::setw(5) << std::setprecision(2) << static_cast<double>(aMatrix[i][j]) << " ";
         }        
-        std::cout << "]" << std::endl;
+        aOut << "]" << std::endl;
     }
     return aOut;
 }

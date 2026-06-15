@@ -18,9 +18,6 @@ int main() {
     std::vector<Mat2D<double>> trainingImages = readImageData(trainingDataFilePath); 
     std::vector<size_t> trainingLabels = readImageLabels(trainingLabelsFilePath);
     
-    std::vector<Mat2D<double>> firstImage(trainingImages.size(), trainingImages[0]);
-    std::vector<size_t> firstLabel(trainingLabels.size(), trainingLabels[0]);
-
     const uint32_t imageVectorSize = trainingImages[0].width() * trainingImages[0].height();
 
     std::vector<size_t> layers = {imageVectorSize, 392, 196, 98, 44, 22, 10};
@@ -51,15 +48,18 @@ int main() {
     // Testing
     layeredNetwork.test(testingIterations);
 
-    const std::string modelExportFilePath = "modelExportFile.txt";
-    /*layeredNetwork.writeModel(modelExportFilePath);
-    NeuralNetwork copyNetwork = NeuralNetwork::readModel(modelExportFilePath);
+    const std::string testModelOutputFilePath = "testModelOutputFile.txt";
+    layeredNetwork.writeModel(testModelOutputFilePath);
+
+    const std::string bestModelExportFilePath = "modelExportFile.txt";
+    NeuralNetwork copyNetwork = NeuralNetwork::readModel(bestModelExportFilePath);
 
     copyNetwork.setTestingData(testingData);
     copyNetwork.setTestingLabels(testingLabels);
     copyNetwork.test(testingIterations);
 
-    //NetworkRunner runner(&copyNetwork);
-    //runner.run();*/
+    NetworkRunner runner(&copyNetwork);
+    runner.run();
+
     return 0;    
 }

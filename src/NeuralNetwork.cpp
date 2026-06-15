@@ -53,10 +53,11 @@ NeuralNetwork::NeuralNetwork(size_t aEpochs, double aLearningRate, const std::ve
         throw std::invalid_argument(errorMessage);
     }
 
-    if (aActivationFunctions.size() != aWeights.size()) {
+    if (aActivationFunctions.size() != aWeights.size() + 1) {
         std::string errorMessage = "Creation of Neural Network failed. Number of activation functions must match the number of weights/bias containers.\n";
         errorMessage += "Expected number of activation functions: " + std::to_string(aBiases.size()) + "\n";
         errorMessage += "Number of provided activation functions: " + std::to_string(aActivationFunctions.size()) + "\n";
+        throw std::invalid_argument(errorMessage);
     }
 
     // Verify weights matrices
@@ -173,13 +174,13 @@ void NeuralNetwork::test(size_t aIterations) {
     if (mTestingData.size() == 0 || mTestingLabels.size() == 0) {
         std::string errorMessage = "Neural Network unable to test: Testing data and labels must be provided.\n";
         errorMessage += "Provided test data: " + std::to_string(mTestingData.size()) + "\n";
-        errorMessage += "Provided number of labels: " + std::to_string(mTrainingLabels.size()) + "\n";
+        errorMessage += "Provided number of labels: " + std::to_string(mTestingLabels.size()) + "\n";
         throw std::invalid_argument(errorMessage);
     }
     if (mTestingData.size() != mTestingLabels.size()) {
         std::string errorMessage = "Neural Network test failed: Number of input images and labels must match\n";
         errorMessage += "Number of images: " + std::to_string(mTestingData.size()) + "\n";
-        errorMessage += "Number of labels: " + std::to_string(mTrainingLabels.size()) + "\n";
+        errorMessage += "Number of labels: " + std::to_string(mTestingLabels.size()) + "\n";
         throw std::invalid_argument(errorMessage);
     }
 
@@ -192,8 +193,8 @@ void NeuralNetwork::test(size_t aIterations) {
     
     // Testing finished. Print output
     std::cout << "----Testing Finished----" << std::endl;
-    std::cout << "Accuracy: " << std::to_string(correctIterations) << "/" << std::to_string(mTestingData.size()) << " -> ";
-    std::cout << std::setprecision(2) << std::to_string(static_cast<double>(correctIterations) / mTestingData.size() * 100.0) << std::endl;
+    std::cout << "Accuracy: " << std::to_string(correctIterations) << "/" << std::to_string(std::min(aIterations, mTestingData.size())) << " -> ";
+    std::cout << std::setprecision(2) << std::to_string(static_cast<double>(correctIterations) / std::min(aIterations, mTestingData.size()) * 100.0) << std::endl;
 }
 
 size_t NeuralNetwork::testSingleImage(size_t aImageIdx) {
@@ -211,7 +212,7 @@ size_t NeuralNetwork::testSingleImage(size_t aImageIdx) {
 }
 
 void NeuralNetwork::printSingleTestImage(size_t aImageIdx) {
-    if (aImageIdx > testingSetSize()) {
+    if (aImageIdx >= testingSetSize()) {
         std::string errorMessage = "Print single image: Provided index is out of range\n";
         errorMessage += "Valid range: [0, " + std::to_string(testingSetSize() - 1) + "]\n";
         errorMessage += "Provided index: " + std::to_string(aImageIdx) + "\n";
@@ -226,8 +227,7 @@ NeuralNetwork NeuralNetwork::readModel(const std::string& aModelFilePath) {
     std::ifstream inFile(aModelFilePath);
     
     if (!inFile.is_open()) {
-        std::cout << "Failed to open model file path for reading." << std::endl;
-        return NeuralNetwork();
+        throw std::runtime_error("Failed to open model file path for reading.");
     }
     std::string line;
 
@@ -355,7 +355,7 @@ void NeuralNetwork::writeModel(const std::string& aModelFilePath) {
             outFile << "Weights:" << std::endl;
             for (size_t row = 0; row < mWeights[i].height(); ++row) {
                 for (size_t col = 0; col < mWeights[i].width(); ++col) {
-                    outFile << mWeights[row][col] << " ";
+                    outFile << mWeights[i][row][col] << " ";
                 }
                 outFile << std::endl;
             }
@@ -533,7 +533,7 @@ void NeuralNetwork::randomizeMatrix(Mat2D<double>& aMat) {
     }
 }
 
-std::ostream& operator<<(std::ostream& aOut, NeuralNetwork& aNeuralNetwork) {
+std::ostream& operator<<(std::ostream& aOut, const NeuralNetwork& aNeuralNetwork) {
     aOut << "------Neural Network parameters------" << std::endl;
     aOut << "Number of Layers: " << aNeuralNetwork.size() << std::endl;
     aOut << "Epochs: " << aNeuralNetwork.mEpochs << std::endl;

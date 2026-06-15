@@ -12,7 +12,7 @@ NetworkRunner::NetworkRunner(NeuralNetwork* aNetwork) {
 void NetworkRunner::run() {
     std::cout << "\033[2J";
     std::cout << "\nWelcome to the Network Runner: \n\n";
-    char userInput;
+    char userInput = '\0';
     while (userInput != '3') {
         printMenu();
         std::cin >> userInput;
